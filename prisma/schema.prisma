@@ -25,47 +25,7 @@ model User {
   acceptNotifi Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  offerts      Offer[]
-  Rate         Rate[]
 }
 
-model Offer {
-  id            Int       @id @default(autoincrement())
-  title         String
-  description   String?
-  active        Boolean   @default(true)
-  contactEmail  String?
-  location      String?
-  published     DateTime  @default(now()) // iso 8601
-  expired       DateTime // iso 8601
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  // FK
-  Idcategory    Int?
-  category      Category? @relation(fields: [Idcategory], references: [id])
-  IdUserCreator Int
-  userCreator   User      @relation(fields: [IdUserCreator], references: [id])
-  Rate          Rate[]
-}
 
-model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  offers    Offer[]
-}
 
-model Rate {
-  idUser  Int
-  idOffer Int
-  value   Int
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [idUser], references: [id])
-  offer Offer @relation(fields: [idOffer], references: [id])
-
-  @@id([idUser, idOffer])
-}
