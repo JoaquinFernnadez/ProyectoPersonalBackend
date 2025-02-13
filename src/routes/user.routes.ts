@@ -7,6 +7,6 @@ import {isAdmin} from "../middlewares/user.middleware";
 const router = Router()
 
 router.get('/profile',isAuthenticate,  AuthController.profile )
-router.get('/listAll',isAdmin,isAuthenticate,  UserController.profile )
+router.get('/getAll', isAdmin,UserController.getAll)
 
 export default router

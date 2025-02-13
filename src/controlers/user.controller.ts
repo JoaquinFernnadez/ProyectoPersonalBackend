@@ -7,14 +7,8 @@ export class UserController{
         const user = UserService.getByEmail(email)
         res.status(200).json({message:'Has conseguido entrar en una ruta protegida'})
     }
-    static async getAll(req: Request,res: Response, next: NextFunction){
-        try{
-        const user = await UserService.getAll()
-        res.status(200).json()
-        }catch(error){
-            next(error)
-        }
+    static async getAll(req:Request, res:Response){
+        const user = UserService.getAll
+        res.status(200).json({message:'Listado de todos lso usuarios'}) 
     }
-    
-
 }

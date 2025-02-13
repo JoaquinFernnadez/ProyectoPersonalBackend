@@ -4,28 +4,35 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
   id           Int      @id @default(autoincrement())
   name         String
-  surname      String?
   email        String   @unique
   password     String
-  role         String? // admin Vip null  
-  course       String?
-  active       Boolean  @default(true)
-  acceptNotifi Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         String? // admin Vip null   
+  score         Score[]    
 }
+model Score {
+  score         Int   @unique
+  createdAt     DateTime
 
-
-
+  iduserCreator Int 
+  userCreator   User @relation(fields: [iduserCreator], references: [id])
+}

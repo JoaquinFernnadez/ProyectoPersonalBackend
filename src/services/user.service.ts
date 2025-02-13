@@ -1,7 +1,5 @@
 import HttpException from "../exceptions/HttpException2";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient()
+import  {prisma} from "dataBase/database"
 
 export class UserService {
 
@@ -12,14 +10,8 @@ export class UserService {
         if(!findUser)  throw new HttpException (404,'User not found')
         return findUser
     }
-
-    static async getById(id:number){
-        const findUser =  await prisma.user.findUnique({ where: {id}})
-        if(!findUser)  throw new HttpException (404, 'User not found')
-        return findUser
-    }
     static async getAll(){
-        const users = await prisma.user.findMany()
-        return users
+        const Users =  await prisma.user.findMany()
+        return Users
     }
 }
