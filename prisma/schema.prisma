@@ -22,17 +22,30 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  password     String
-  role         String? // admin Vip null   
-  score         Score[]    
+  id        Int       @id @default(autoincrement()) // ID único para el usuario
+  username  String    @unique                      // Nombre de usuario único
+  email     String    @unique                      // Email único
+  password  String    // Contraseña del usuario
+  pokemons    UserPokemon[] // Relación con los Pokémon del usuario
 }
-model Score {
-  score         Int   @unique
-  createdAt     DateTime
+model Pokemon {
+  id        Int    @id @default(autoincrement())
+  name      String      @unique
+  sprite    String
+  type      String
+  stats     Json    // Para almacenar estadísticas como HP, ataque, defensa, etc.
+  evolution Json?   // Para almacenar la evolución en formato JSON
+  userPokemons UserPokemon[] // Relación con los usuarios que tienen este Pokémon
+}
+model UserPokemon {
+  id        Int      @id @default(autoincrement()) // Identificador único para esta relación
+  userId    Int      // Relación con el usuario
+  pokemonName String      // Relación con el Pokémon
+  unlocked  Boolean  @default(false) // Indica si el Pokémon está desbloqueado
+  isTeam    Boolean  @default(false) // Indica si el Pokémon está en el equipo del usuario
+  user      User     @relation(fields: [userId], references: [id]) // Relación con User
+  pokemon   Pokemon  @relation(fields: [pokemonName], references: [name]) // Relación con Pokemon
 
-  iduserCreator Int 
-  userCreator   User @relation(fields: [iduserCreator], references: [id])
+  @@unique([userId, pokemonName]) // Asegura que no se repitan las relaciones
 }
+

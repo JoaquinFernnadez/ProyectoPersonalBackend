@@ -1,7 +1,7 @@
 import express, {Response, Request} from "express"
 import authRouter from "./routes/auth.routes"
 import userRouter from "./routes/user.routes"
-import scoreRouter from "./routes/score.routes"
+import scoreRouter from "./routes/pokemon.routes"
 import rateLimit from "express-rate-limit"
 import helmet from "helmet"
 import compression from "compression"
@@ -41,3 +41,5 @@ app.get('/', (req:Request, res:Response) => {
 })
 
 export default app 
+
+
