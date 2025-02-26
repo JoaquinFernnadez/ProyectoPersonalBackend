@@ -84,13 +84,13 @@ export class PokemonService {
         include: {
           pokemon: true,
         },
-      });
+      })
 
-      return pokemonesDesbloqueados.map((userPokemon) => userPokemon.pokemon);
+      return pokemonesDesbloqueados.map((userPokemon) => userPokemon.pokemon)
     } catch (error) {
-      throw new Error('Error al obtener los Pokémon desbloqueados.');
+      throw new Error('Error al obtener los Pokémon desbloqueados.')
     }
-  };
+  }
 
   static async guardarEquipoUsuario(userId: number, pokemonNames: string[]) {
     if (pokemonNames.length > 6) {
@@ -136,71 +136,11 @@ export class PokemonService {
           pokemon: true,
         },
       })
-      return equipo
+      return equipo.map( equipo => equipo.pokemon)
     } catch (error) {
       throw new Error('Error al obtener el equipo.')
     }
   }
-  static async guardarPoekmonsNuevos(userId: number, pokemons: string[]){ // Guardar los pokes ya al crear el sobre mejor
-    
-      const savedPokemons: string[] = [];
-    
-      for (const pokemonName of pokemons) {
-        let pokemon = await prisma.pokemon.findUnique({ where: { name: pokemonName } })
-    
-        // Si el Pokémon no está en la BD, obtenerlo de la PokeAPI y guardarlo
-        if (!pokemon) {
-          const apiPokemon = await PokemonService.fetchPokemonFromAPI(pokemonName)
-          if (!apiPokemon) return
-    
-          pokemon = await prisma.pokemon.create({
-            data: {
-              name: apiPokemon.name,
-              sprite: apiPokemon.sprite,
-            },
-          })
-        }
-    
-        // Verificar si el usuario ya tiene este Pokémon desbloqueado
-        const existingUserPokemon = await prisma.userPokemon.findFirst({
-          where: { userId, pokemonId: pokemon.id },
-        })
-    
-        if (!existingUserPokemon) {
-          await prisma.userPokemon.create({
-            data: {
-              userId,
-              pokemonId: pokemon.id,
-              unlocked: true,
-            },
-          })
-          savedPokemons.push(pokemonName)
-        }
-      }
-    
-      return savedPokemons
-    }
-     static async  fetchPokemonFromAPI (pokemonName: string)  {
-      try {
-        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`);
-        
-        if (!response.ok) {
-          console.error(`Error al obtener ${pokemonName} de la PokeAPI`);
-          return null
-        }
-    
-        const data = await response.json();
-        return {
-          name: data.name,
-          sprite: data.sprites.front_default,
-        }
-      } catch (error) {
-        console.error(`Error en fetch de la PokeAPI para ${pokemonName}:`, error)
-        return null
-      }
-    }
-
-    
- 
+  
   }
 

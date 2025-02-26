@@ -53,23 +53,5 @@ export class PokemonController{
           res.status(500).json({ message: 'No se pudo obtener el equipo de Pokémon.' })
         }
       }
-       static async guardarPoekmonsNuevos(req: Request, res: Response)  {
-        try {
-          const { pokemons } = req.body;
-          const userId = req.body.user.id; // ID del usuario autenticado
       
-          if (!userId) return res.status(401).json({ error: "Usuario no autenticado" });
-          if (!pokemons || !Array.isArray(pokemons) || pokemons.length === 0) {
-            return res.status(400).json({ error: "Lista de Pokémon no válida" });
-          }
-      
-          // Llamamos al servicio para guardar los Pokémon
-          const savedPokemons = await PokemonService.guardarPoekmonsNuevos(userId, pokemons);
-      
-          return res.json({ message: "Pokémon guardados con éxito", savedPokemons });
-        } catch (error) {
-          console.error("Error en saveUserPokemons:", error);
-          return res.status(500).json({ error: "Error interno del servidor" });
-        }
-      };
 }
