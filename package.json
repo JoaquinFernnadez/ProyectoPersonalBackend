@@ -30,8 +30,8 @@
   },
   "dependencies": {
     "@libsql/client": "^0.8.1",
-    "@prisma/adapter-libsql": "^6.3.1",
-    "@prisma/client": "^6.3.0",
+    "@prisma/adapter-libsql": "^6.4.1",
+    "@prisma/client": "^6.4.1",
     "bcrypt": "^5.1.1",
     "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",

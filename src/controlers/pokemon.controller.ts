@@ -1,33 +1,32 @@
 import {Response, Request} from 'express'
 import { PokemonService } from '../services/pokemon.service';
-import { Pokemon } from '@prisma/client';
 
 
 export class PokemonController{
 
     static async getAllPokemons(req:Request, res:Response){
-        const pokemons = PokemonService.getAllPokemons()
-        res.status(200).json ({message:'Has entrado a las mejores puntuaciones de los ultimos 30 días'})
+        const pokemons = await PokemonService.getAllPokemons()
+        res.status(200).json (pokemons)
     }
     
     static async getPokemonDetail(req:Request, res:Response){
         const id =  Number(req.params.id)   
-        const pokemon = PokemonService.getPokemonDetail(id)
-        res.status(200).json({message:'Has entrado a tus Puntuaciones'})
+        const pokemon = await PokemonService.getPokemonDetail(id)
+        res.status(200).json(pokemon)
 
     }
    
     static async getNewPokemons(req:Request, res:Response){
         const  idUser = req.body.user.id
-        const newPokemons = PokemonService.getNewPokemons(idUser)
-        res.status(200).json ({message:'Has entrado a las mejores puntuaciones de la historia'})
+        const newPokemons = await PokemonService.getNewPokemons(idUser)
+        res.status(200).json (newPokemons)
     }
 
      static async  obtenerPokemonsDesbloqueados  (req: Request, res: Response) {
         const  userId  = req.body.user.id
         try {
-          const pokemones = await PokemonService.obtenerPokemonsDesbloqueados(parseInt(userId))
-          res.json(pokemones)
+          const pokemons = await PokemonService.obtenerPokemonsDesbloqueados(parseInt(userId))
+          res.json(pokemons)
         } catch (error) {
           res.status(500).json({ message: 'No se pudieron obtener los Pokémon desbloqueados.' })
         }

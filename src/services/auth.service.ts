@@ -9,8 +9,8 @@ const Token_password = process.env.TOKEN_PASSWORD || 'pass'
 
 export class AuthService{
     static async register(user:User){
-        // Ver si el usuario existe 
-        // Sentencia sql normal :'select * from users where email = user.email'
+        console.log(user)
+        
         const findUser = await prisma.user.findUnique({where:{email: user.email
             }})
 
@@ -18,13 +18,12 @@ export class AuthService{
 
         // Encriptar el password
         const passwordEncrypted = await bcrypt.hash(user.password, 10) 
-        user.password = ''
+        // user.password = ''
         //Guardar el usuario en la bd
         return await prisma.user.create({
                 data:{
                     ...user,
-                    password: passwordEncrypted,
-                    role: null
+                    password: passwordEncrypted
                 },
                 omit:{
                     password: true
@@ -33,7 +32,7 @@ export class AuthService{
 
     }
     
-    static async login(email: string, password: string, role: string){
+    static async login(email: string, password: string){
 
         /*const query = `SELECT * FROM user WHERE email= '${email}'`
 
@@ -46,7 +45,7 @@ export class AuthService{
         const isPaswordCorrect =  await bcrypt.compare(password,findUser.password)
         if(!isPaswordCorrect) throw new HttpException(401,"Invalid user or password")
 
-        const token = jwt.sign({colorFavorito: "azul",id:findUser.id, email:findUser.email},
+        const token = jwt.sign({id:findUser.id, email:findUser.email},
             Token_password,
             {expiresIn:"1h"})
         return token 

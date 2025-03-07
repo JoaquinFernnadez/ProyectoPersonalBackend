@@ -1,7 +1,7 @@
 import express, {Response, Request} from "express"
 import authRouter from "./routes/auth.routes"
 import userRouter from "./routes/user.routes"
-import scoreRouter from "./routes/pokemon.routes"
+import pokemonRouter from "./routes/pokemon.routes"
 import rateLimit from "express-rate-limit"
 import helmet from "helmet"
 import compression from "compression"
@@ -15,7 +15,7 @@ const app = express()
 // cambiar la url al deployar
 
 app.use(cors({
-    origin: '*',
+    origin: ['*', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true 
 }))
@@ -34,7 +34,7 @@ app.use(limiter)
 
 app.use('/api/auth',authRouter)
 app.use('/api/user',userRouter)
-app.use('/api/scores',scoreRouter)
+app.use('/api/pokemon',pokemonRouter)
 
 app.get('/', (req:Request, res:Response) => {
     res.send('Bienvenido al backend')
