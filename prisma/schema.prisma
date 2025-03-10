@@ -22,22 +22,22 @@ model User {
   pokemons    UserPokemon[] // Relación con los Pokémon del usuario
 }
 model Pokemon {
-  id        Int    @id @default(autoincrement())
+  id        Int         @id 
   name      String      @unique
-  sprite    String
-  type      String
-  stats     Json    // Para almacenar estadísticas como HP, ataque, defensa, etc.
-  evolution Json?   // Para almacenar la evolución en formato JSON
+  sprite    String?
   userPokemons UserPokemon[] // Relación con los usuarios que tienen este Pokémon
 }
 model UserPokemon {
-  id        Int      @id @default(autoincrement()) // Identificador único para esta relación
+  id        Int       @id  // Identificador único para esta relación
   userId    Int      // Relación con el usuario
   pokemonName String      // Relación con el Pokémon
   unlocked  Boolean  @default(false) // Indica si el Pokémon está desbloqueado
   isTeam    Boolean  @default(false) // Indica si el Pokémon está en el equipo del usuario
-  user      User     @relation(fields: [userId], references: [id]) // Relación con User
-  pokemon   Pokemon  @relation(fields: [pokemonName], references: [name]) // Relación con Pokemon
+  sprite    String?
+  user      User?     @relation(fields: [userId], references: [id]) // Relación con User
+  pokemon   Pokemon?  @relation(fields: [pokemonName], references: [name]) // Relación con Pokemon
 
   @@unique([userId, pokemonName]) // Asegura que no se repitan las relaciones
 }
+
+

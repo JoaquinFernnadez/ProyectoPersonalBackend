@@ -9,7 +9,9 @@ interface ApiResponse {
 }
 interface PokemonResponse {
   name: string
-  url: string
+  sprites: {
+    front_default: string
+  }
 }
 interface PokemonDetails {
   name: string;
@@ -19,6 +21,9 @@ interface PokemonDetails {
   abilities: string[];
   stats: { stat: { name: string }; base_stat: number }[];
 }
+
+let newPokemons: PokemonResponse[] = []
+let allpokemons : PokemonResponse[] = []
 
 export class PokemonService {
 
@@ -47,29 +52,51 @@ export class PokemonService {
 
   }
 
-  static async getNewPokemons(id: number) {
-    let newPokemons: PokemonResponse[] = []
+  static async getNewPokemons(idUser : number) {
+    allpokemons = []
+    newPokemons = []
     for (let i = 0; i < 6; i++) {
+      
       const random = Math.floor(Math.random() * 1025) + 1;
       const response = await fetch(`${BASE_POKEAPI}/${random}`);
       const data = await response.json() as PokemonResponse;
-      const search = await prisma.userPokemon.findMany({
+      const search = await prisma.pokemon.findUnique({
         where: {
-          userId: 1,
-          pokemonName: data.name,
-          unlocked: true
+          id: random,
+          name: data.name,
         }
       })
       if (!search) {
+        await prisma.pokemon.create({
+          data: {
+            id: random,
+            name: data.name,
+            sprite: data.sprites?.front_default, 
+          },
+        })
+      }
+      const search2 = await prisma.userPokemon.findUnique({
+        where: {
+          id: random,
+        }
+      })
+      if (!search2) {
         await prisma.userPokemon.create({
           data: {
-            userId: id,
+            id: random,
+            userId: idUser,
             pokemonName: data.name,
-            unlocked: true, // Marcamos el Pokémon como desbloqueado
+            unlocked: true,
+            isTeam: false,
+            sprite: data.sprites?.front_default,
           },
         })
       }
       newPokemons.push(data)
+      if(!allpokemons.includes(data)) {
+        allpokemons.push(data)
+      }
+  
     }
     return newPokemons
   }
@@ -79,45 +106,55 @@ export class PokemonService {
       const pokemonesDesbloqueados = await prisma.userPokemon.findMany({
         where: {
           userId: userId,
-          unlocked: true,
         },
         include: {
           pokemon: true,
         },
       })
-
-      return pokemonesDesbloqueados.map((userPokemon) => userPokemon.pokemon)
+      return pokemonesDesbloqueados
     } catch (error) {
-      throw new Error('Error al obtener los Pokémon desbloqueados.')
+      throw Error('Error al obtener los Pokémon desbloqueados.');
     }
   }
 
-  static async guardarEquipoUsuario(userId: number, pokemonNames: string[]) {
-    if (pokemonNames.length > 6) {
+  static async guardarEquipoUsuario(userId: number, pokemonIds: number[]) {
+    if (pokemonIds.length > 6) {
       throw new Error('No puedes seleccionar más de 6 Pokémon.');
+    }
+    const equipo = await prisma.userPokemon.findMany({
+      where: {
+        userId: userId,
+        isTeam: true,
+      },
+      include: {
+        pokemon: true,
+      },
+    })
+    for(const pokemon of equipo) {
+      await prisma.userPokemon.update({
+        where: {
+          id: pokemon.id,
+          userId: userId
+        },data: {
+          isTeam : false
+        }
+      });
     }
 
     try {
-      await prisma.userPokemon.updateMany({
-        where: {
-          userId: userId,
-          isTeam: true,
-        },
-        data: {
-          isTeam: false,
-        },
-      })
-
-
-      await prisma.userPokemon.updateMany({
-        where: {
-          userId: userId,
-          pokemonName: { in: PokemonsNames },
-        },
-        data: {
-          isTeam: true,
-        },
-      })
+      for (const pokemonId of pokemonIds) {
+        const pokemon = await prisma.userPokemon.update({
+          where: {
+            id: Number(pokemonId),
+            userId: userId
+          },data: {
+            isTeam : true
+          }
+        });
+        if (!pokemon) {
+          throw new Error(`El Pokémon no existe.`);
+        }
+      }
 
       return 'Equipo guardado correctamente';
     } catch (error) {
@@ -136,7 +173,7 @@ export class PokemonService {
           pokemon: true,
         },
       })
-      return equipo.map( equipo => equipo.pokemon)
+      return equipo
     } catch (error) {
       throw new Error('Error al obtener el equipo.')
     }
