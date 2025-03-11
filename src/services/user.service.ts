@@ -1,5 +1,5 @@
 import HttpException from "../exceptions/HttpException2";
-import  {prisma} from "dataBase/database"
+import { prisma } from "../dataBase/database";
 
 export class UserService {
 

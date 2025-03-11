@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { isAuthenticate}  from "../middlewares/auth.middleware";
 import { PokemonController } from "../controlers/pokemon.controller";
 
 const router = Router()

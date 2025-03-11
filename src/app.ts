@@ -15,7 +15,7 @@ const app = express()
 // cambiar la url al deployar
 
 app.use(cors({
-    origin: ['*', 'http://localhost:5173'],
+    origin: ['*', 'http://localhost:5173','https://proyectopersonalfronted.onrender.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true 
 }))
