@@ -33,7 +33,7 @@ export class AuthController{
             
         }
         catch(error){
-            res.status(409).json({message:'Fallo al loguearse al usuario'})
+            res.status(409).json({message: error})
         }
 
     }
