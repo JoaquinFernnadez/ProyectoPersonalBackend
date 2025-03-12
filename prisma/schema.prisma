@@ -18,8 +18,10 @@ model User {
   id        Int       @id @default(autoincrement()) // ID único para el usuario
   name  String    @unique                      // Nombre de usuario único
   email     String    @unique                      // Email único
+  role      String 
   password  String    // Contraseña del usuario
   pokemons    UserPokemon[] // Relación con los Pokémon del usuario
+  quejas      Quejas[]
 }
 model Pokemon {
   id        Int         @id 
@@ -39,5 +41,10 @@ model UserPokemon {
 
   @@unique([userId, pokemonName]) // Asegura que no se repitan las relaciones
 }
-
-
+model Quejas {
+  id       Int      @id @default(autoincrement())
+  userId   Int   
+  titulo   String 
+  descripcion  String 
+  user    User    @relation(fields: [userId], references: [id])
+}

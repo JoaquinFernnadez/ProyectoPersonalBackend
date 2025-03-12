@@ -23,7 +23,8 @@ export class AuthService{
         return await prisma.user.create({
                 data:{
                     ...user,
-                    password: passwordEncrypted
+                    password: passwordEncrypted,
+                    role: "user"
                 },
                 omit:{
                     password: true

@@ -10,7 +10,9 @@ export class UserService {
         if(!findUser)  throw new HttpException (404,'User not found')
         return findUser
     }
-    static async getAll(){
+    static async getAll(idUser : number){
+        const rol = await prisma.user.findUnique({where:{id: idUser, role: 'Admin'}})
+        if(!rol) throw new HttpException (401,'Unauthorized')
         const Users =  await prisma.user.findMany()
         return Users
     }
