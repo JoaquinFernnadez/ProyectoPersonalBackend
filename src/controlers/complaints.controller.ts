@@ -8,15 +8,16 @@ export class ComplaintsController{
         const complaint = await ComplaintsService.getAll(idUser)
         res.status(200).json(complaint) 
     }
-    static async createNew(req:Request, res:Response){
+    static async createNew(req:Request, res:Response,next: NextFunction){
         try{
             const complaint = req.body 
-            if(!complaint)  res.status(400).json({error:'Hace falta la queja'})
+            if(!complaint)  res.status(400).json({error:'Hace falta la queja'}), next()
             
             const newComplaint = await ComplaintsService.create(complaint);
             res.status(201).json(newComplaint)
         }catch(error){
             res.status(401).json({error:'Error al crear la queja'})
+            next(error)
         }
 
     }

@@ -32,7 +32,7 @@ model Pokemon {
 model UserPokemon {
   id        Int       @id  // Identificador único para esta relación
   userId    Int      // Relación con el usuario
-  pokemonName String      // Relación con el Pokémon
+  pokemonName String      // Relación con el Pokémon 
   unlocked  Boolean  @default(false) // Indica si el Pokémon está desbloqueado
   isTeam    Boolean  @default(false) // Indica si el Pokémon está en el equipo del usuario
   sprite    String?

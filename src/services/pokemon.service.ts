@@ -1,25 +1,27 @@
 import { prisma } from "../dataBase/database"
 
 
-const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon/';
-let PokemonsNames: string[] = [];
+const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
 
 interface ApiResponse {
   results: PokemonResponse[]
 }
 interface PokemonResponse {
   name: string
-  sprites: {
-    front_default: string
+  
+    sprites:{
+      front_default: string
+    
   }
+  unlocked?:boolean
 }
 interface PokemonDetails {
-  name: string;
-  height: number;
-  weight: number;
-  types: string[];
-  abilities: string[];
-  stats: { stat: { name: string }; base_stat: number }[];
+  name: string
+  height: number
+  weight: number
+  types: string[]
+  abilities: string[]
+  stats: { stat: { name: string }; base_stat: number }[]
 }
 
 let newPokemons: PokemonResponse[] = []
@@ -27,10 +29,21 @@ let allpokemons : PokemonResponse[] = []
 
 export class PokemonService {
 
-  static async getAllPokemons() {
-    const response = await fetch(BASE_POKEAPI)
+  static async getAllPokemons(userId : number, offset: number) {
+    let limit = 20
+    if(offset == 1020)  limit = 5;
+    const response = await fetch(BASE_POKEAPI + `?limit=${limit}&offset=${offset}`)
     const data = await response.json() as ApiResponse
     const pokemons = data.results
+    // pokemons = name + url
+    const unlocked = await  PokemonService.obtenerPokemonsDesbloqueados(userId)
+    for(const pokemon of unlocked){
+      for(const a of pokemons){
+        if(pokemon.pokemon?.name == a.name){
+          a.unlocked = true
+        }
+      }
+    }
     return pokemons
 
   }
@@ -103,7 +116,7 @@ export class PokemonService {
 
   static async obtenerPokemonsDesbloqueados(userId: number) {
     try {
-      const pokemonesDesbloqueados = await prisma.userPokemon.findMany({
+      const pokemonsDesbloqueados = await prisma.userPokemon.findMany({
         where: {
           userId: userId,
         },
@@ -111,7 +124,7 @@ export class PokemonService {
           pokemon: true,
         },
       })
-      return pokemonesDesbloqueados
+      return pokemonsDesbloqueados
     } catch (error) {
       throw Error('Error al obtener los Pokémon desbloqueados.');
     }

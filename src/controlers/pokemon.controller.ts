@@ -5,19 +5,20 @@ import { PokemonService } from '../services/pokemon.service';
 export class PokemonController{
 
     static async getAllPokemons(req:Request, res:Response){
-        const pokemons = await PokemonService.getAllPokemons()
-        res.status(200).json (pokemons)
+      const userId = Number (req.query.id)
+      const offset = Number (req.query.offset)
+      const pokemons = await PokemonService.getAllPokemons( userId , offset )
+      res.status(200).json (pokemons)
     }
     
     static async getPokemonDetail(req:Request, res:Response){
-        const id =  Number(req.params.id)   
+        const id =  Number(req.query.id)   
         const pokemon = await PokemonService.getPokemonDetail(id)
         res.status(200).json(pokemon)
 
     }
    
     static async getNewPokemons(req:Request, res:Response){
-        // const  idUser = Number (req.body.user.id)
         const idUser = Number (req.query.id)
         const newPokemons = await PokemonService.getNewPokemons(idUser)
         res.status(200).json (newPokemons)
