@@ -18,9 +18,10 @@ const app = express()
 // cambiar la url al deployar
 
 app.use(cors({
-    origin: ['*', 'http://localhost:5173','https://proyectopersonalfronted.onrender.com'],
+    origin: ['http://localhost:5173','https://proyectopersonalfronted.onrender.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true 
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
 app.use(express.json())
@@ -41,7 +42,7 @@ app.use('/api/pokemon',pokemonRouter)
 app.use('/api/complaints',complaintsRouter)
 
 app.get('/', (req:Request, res:Response) => {
-    res.send('Bienvenido al backend')
+    res.send('Bienvenido al backend (api rest) ')
 })
 
 export default app 
