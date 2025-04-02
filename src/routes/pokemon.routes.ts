@@ -9,5 +9,6 @@ router.get ('/packs', PokemonController.getNewPokemons )
 router.get('/desbloqueados', PokemonController.obtenerPokemonsDesbloqueados);
 router.post('/desbloqueados/guardarEquipo',PokemonController.guardarEquipoUsuario);
 router.get('/verEquipo',  PokemonController.verEquipo )
+router.get('/getTeams' , PokemonController.getTeam)
 
 export default router

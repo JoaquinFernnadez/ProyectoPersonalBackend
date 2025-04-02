@@ -20,6 +20,8 @@ model User {
   email     String    @unique                      // Email único
   role      String 
   password  String    // Contraseña del usuario
+  level     Int     @default(0)
+  maxLevel  Int     @default(0)
   pokemons    UserPokemon[] // Relación con los Pokémon del usuario
   quejas      Quejas[]
 }

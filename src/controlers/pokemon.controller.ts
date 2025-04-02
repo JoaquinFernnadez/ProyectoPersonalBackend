@@ -21,6 +21,7 @@ export class PokemonController{
     static async getNewPokemons(req:Request, res:Response){
         const idUser = Number (req.query.id)
         const newPokemons = await PokemonService.getNewPokemons(idUser)
+        await PokemonService.guardarPokemons(newPokemons,idUser)
         res.status(200).json (newPokemons)
     }
 
@@ -52,6 +53,15 @@ export class PokemonController{
           res.json(equipo)
         } catch (error) {
           res.status(500).json({ message: 'No se pudo obtener el equipo de Pokémon.' })
+        }
+      }
+      static async getTeam(req: Request, res: Response){
+        const idUser = Number (req.query.id)
+        try{
+          const  equipo = await PokemonService.getTeam(idUser)
+          res.json(equipo)
+        }catch (error){
+          res.status(500).json({message: "No se pudo generar el equipo"})
         }
       }
       

@@ -8,12 +8,12 @@ interface ApiResponse {
 }
 interface PokemonResponse {
   name: string
-  
-    sprites:{
-      front_default: string
-    
+  id: number
+  sprites: {
+    front_default: string
+
   }
-  unlocked?:boolean
+  unlocked?: boolean
 }
 interface PokemonDetails {
   name: string
@@ -25,21 +25,21 @@ interface PokemonDetails {
 }
 
 let newPokemons: PokemonResponse[] = []
-let allpokemons : PokemonResponse[] = []
+let allpokemons: PokemonResponse[] = []
 
 export class PokemonService {
 
-  static async getAllPokemons(userId : number, offset: number) {
+  static async getAllPokemons(userId: number, offset: number) {
     let limit = 20
-    if(offset == 1020)  limit = 5;
+    if (offset == 1020) limit = 5;
     const response = await fetch(BASE_POKEAPI + `?limit=${limit}&offset=${offset}`)
     const data = await response.json() as ApiResponse
     const pokemons = data.results
     // pokemons = name + url
-    const unlocked = await  PokemonService.obtenerPokemonsDesbloqueados(userId)
-    for(const pokemon of unlocked){
-      for(const a of pokemons){
-        if(pokemon.pokemon?.name == a.name){
+    const unlocked = await PokemonService.obtenerPokemonsDesbloqueados(userId)
+    for (const pokemon of unlocked) {
+      for (const a of pokemons) {
+        if (pokemon.pokemon?.name == a.name) {
           a.unlocked = true
         }
       }
@@ -65,54 +65,57 @@ export class PokemonService {
 
   }
 
-  static async getNewPokemons(idUser : number) {
-    allpokemons = []
+  static async getNewPokemons(idUser: number) {
+    
     newPokemons = []
     for (let i = 0; i < 6; i++) {
-      
+
       const random = Math.floor(Math.random() * 1025) + 1;
       const response = await fetch(`${BASE_POKEAPI}/${random}`);
       const data = await response.json() as PokemonResponse;
+      
+      newPokemons.push(data)
+    
+    }
+    return newPokemons
+  }
+  static async guardarPokemons(pokemons: PokemonResponse[], idUser : number){
+    for(let i = 0;i<pokemons.length; i++){
       const search = await prisma.pokemon.findUnique({
         where: {
-          id: random,
-          name: data.name,
+          id: pokemons[i].id,
+          name: pokemons[i].name,
         }
       })
       if (!search) {
         await prisma.pokemon.create({
           data: {
-            id: random,
-            name: data.name,
-            sprite: data.sprites?.front_default, 
+            id: pokemons[i].id,
+            name: pokemons[i].name,
+            sprite: pokemons[i].sprites?.front_default,
           },
         })
       }
       const search2 = await prisma.userPokemon.findUnique({
         where: {
-          id: random,
+          id: pokemons[i].id,
         }
       })
       if (!search2) {
         await prisma.userPokemon.create({
           data: {
-            id: random,
+            id: pokemons[i].id,
             userId: idUser,
-            pokemonName: data.name,
+            pokemonName: pokemons[i].name,
             unlocked: true,
             isTeam: false,
-            sprite: data.sprites?.front_default,
+            sprite: pokemons[i].sprites?.front_default,
           },
         })
       }
-      newPokemons.push(data)
-      if(!allpokemons.includes(data)) {
-        allpokemons.push(data)
-      }
-  
+
     }
-    return newPokemons
-  }
+  } 
 
   static async obtenerPokemonsDesbloqueados(userId: number) {
     try {
@@ -143,13 +146,14 @@ export class PokemonService {
         pokemon: true,
       },
     })
-    for(const pokemon of equipo) {
+    for (const pokemon of equipo) {
       await prisma.userPokemon.update({
         where: {
           id: pokemon.id,
           userId: userId
-        },data: {
-          isTeam : false
+        }, data: {
+          isTeam: false
+          
         }
       });
     }
@@ -160,8 +164,8 @@ export class PokemonService {
           where: {
             id: Number(pokemonId),
             userId: userId
-          },data: {
-            isTeam : true
+          }, data: {
+            isTeam: true
           }
         });
         if (!pokemon) {
@@ -184,13 +188,21 @@ export class PokemonService {
         },
         include: {
           pokemon: true,
-        },
+        }, 
       })
       return equipo
     } catch (error) {
       throw new Error('Error al obtener el equipo.')
     }
   }
-  
+  static async getTeam(userId: number){
+    try{
+      const team = [] as PokemonDetails[]
+
+    }catch(error){
+      throw new Error ('Error al generar el equipo')
+    }
   }
+
+}
 
