@@ -26,8 +26,8 @@ export class AuthController{
             res.cookie('token',token,{
                 maxAge: 60 * 60 * 1000, // 1 hora de duracion
                 httpOnly: true, // no se puede acceder mediate js
-                secure: false,  // solo se envia por https
-                sameSite: 'strict', // Evita ataque CSRF
+                secure: true,  // solo se envia por https
+                sameSite: 'lax', // Evita ataque CSRF
             })
             res.status(201).json({message:'Login succesfully',token})
             
