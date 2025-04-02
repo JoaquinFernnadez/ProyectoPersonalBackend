@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
-import HttpException from "../exceptions/HttpException2"
+import { HttpException } from "../exceptions/HttpException2";
 import { prisma } from "dataBase/database"
 
 
@@ -38,11 +38,7 @@ export class AuthService {
 
     static async login(email: string, password: string) {
 
-        /*const query = `SELECT * FROM user WHERE email= '${email}'`
-
-        const findUsers = await prisma.$queryRawUnsafe(query) as User[]
-        const findUser = findUsers[0]*/
-
+    
         const findUser = await prisma.user.findUnique({ where: { email } })
         if (!findUser) throw new HttpException(401, "Invalid user or password")
 
