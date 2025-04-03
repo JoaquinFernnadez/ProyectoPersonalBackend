@@ -16,4 +16,12 @@ export class UserService {
         const Users =  await prisma.user.findMany()
         return Users
     }
+    static async getById(id: number){
+        const findUser = await prisma.user.findUnique({
+            where: {id},
+            omit: {password: true}
+        })
+        if(!findUser) throw new HttpException (404,'User not found')
+        return findUser
+    }
 }

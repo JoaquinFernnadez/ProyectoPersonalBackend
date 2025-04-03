@@ -1,4 +1,5 @@
 import { prisma } from "../dataBase/database"
+import { UserService } from "./user.service";
 
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
@@ -21,11 +22,14 @@ interface PokemonDetails {
   weight: number
   types: string[]
   abilities: string[]
-  stats: { stat: { name: string }; base_stat: number }[]
+  stats: {
+    stat: { name: string }
+    base_stat: number
+  }[]
 }
 
 let newPokemons: PokemonResponse[] = []
-let allpokemons: PokemonResponse[] = []
+let maxStats:  number[] = []
 
 export class PokemonService {
 
@@ -65,22 +69,15 @@ export class PokemonService {
 
   }
 
-  static async getNewPokemons(idUser: number) {
-    
+  static async getNewPokemons() {
     newPokemons = []
     for (let i = 0; i < 6; i++) {
-
-      const random = Math.floor(Math.random() * 1025) + 1;
-      const response = await fetch(`${BASE_POKEAPI}/${random}`);
-      const data = await response.json() as PokemonResponse;
-      
-      newPokemons.push(data)
-    
+      newPokemons.push(await this.generateRandomPokemon())
     }
     return newPokemons
   }
-  static async guardarPokemons(pokemons: PokemonResponse[], idUser : number){
-    for(let i = 0;i<pokemons.length; i++){
+  static async guardarPokemons(pokemons: PokemonResponse[], idUser: number) {
+    for (let i = 0; i < pokemons.length; i++) {
       const search = await prisma.pokemon.findUnique({
         where: {
           id: pokemons[i].id,
@@ -115,7 +112,7 @@ export class PokemonService {
       }
 
     }
-  } 
+  }
 
   static async obtenerPokemonsDesbloqueados(userId: number) {
     try {
@@ -153,7 +150,7 @@ export class PokemonService {
           userId: userId
         }, data: {
           isTeam: false
-          
+
         }
       });
     }
@@ -188,20 +185,67 @@ export class PokemonService {
         },
         include: {
           pokemon: true,
-        }, 
+        },
       })
       return equipo
     } catch (error) {
       throw new Error('Error al obtener el equipo.')
     }
   }
-  static async getTeam(userId: number){
-    try{
+  
+  static async getTeam(userId: number) {
+    maxStats = []
+    try {
       const team = [] as PokemonDetails[]
+      let pokemon: PokemonDetails
+      
+      const user = await UserService.getById(userId)
 
-    }catch(error){
-      throw new Error ('Error al generar el equipo')
+      for (let i = 0; team.length <= 6; i++) {
+        const pokemons = await this.generateRandomPokemon()
+
+        pokemon = await this.getPokemonDetail(pokemons.id)
+
+        if (await this.validarPokemons(user.level, pokemon) && !team.includes(pokemon)) {
+          team.push(pokemon)
+        } 
+      }
+
+      return team
+    } catch (error) {
+      throw new Error('Error al generar el equipo')
     }
+  }
+  static async validarPokemons(level: number, pokemon: PokemonDetails) {
+   
+    let acumulador = 0 
+    let maxStat = 0
+    let limitAcum = ( level * 20 ) + 280
+    let minMaxStat = level * 10 
+    let posicion  = 0
+
+    for(let i = 0; i < 6;i++){
+      acumulador += pokemon.stats[i].base_stat
+      if(maxStat < pokemon.stats[i].base_stat){
+        maxStat = pokemon.stats[i].base_stat
+        posicion = i 
+      }
+    }
+    if(level < 10 &&  acumulador < limitAcum ) return true
+    if(level >= 10 && !maxStats[posicion] && maxStat > minMaxStat && acumulador < limitAcum){
+      maxStats[posicion] = maxStat
+      return true 
+    }
+    return false
+
+  }
+  static async generateRandomPokemon() {
+
+    const random = Math.floor(Math.random() * 1025) + 1;
+    const response = await fetch(`${BASE_POKEAPI}/${random}`);
+    const data = await response.json() as PokemonResponse;
+    return data
+
   }
 
 }

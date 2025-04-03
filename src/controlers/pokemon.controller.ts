@@ -20,7 +20,7 @@ export class PokemonController{
    
     static async getNewPokemons(req:Request, res:Response){
         const idUser = Number (req.query.id)
-        const newPokemons = await PokemonService.getNewPokemons(idUser)
+        const newPokemons = await PokemonService.getNewPokemons()
         await PokemonService.guardarPokemons(newPokemons,idUser)
         res.status(200).json (newPokemons)
     }
