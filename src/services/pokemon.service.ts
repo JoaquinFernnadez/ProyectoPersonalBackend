@@ -8,9 +8,6 @@ import SalidaDatabase from "../utils/SalidasDtabase"
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
 
 
-
-
-
 let newPokemons: SalidaDatabase[] = []
 let maxStats: number[] = []
 const pokemonCache = new Map();
@@ -184,10 +181,11 @@ export class PokemonService {
 
       while (team.length < 6) {
 
-        const pokemonsPromises = Array.from({ length: 10 }).map(() => this.generateRandomPokemon());
+        const pokemonsPromises = Array.from({ length: 10 }).map(() => this.getRandomPokemon());
         const pokemons = await Promise.all(pokemonsPromises);
 
         for (const pokemonsData of pokemons) {
+          if(!pokemonsData) return 
           if (generatedPokemonNames.has(pokemonsData.name)) {
             const pokemon = await this.getPokemonDetail(pokemonsData.id) as PokemonDetails
 
@@ -205,7 +203,6 @@ export class PokemonService {
     }
   }
   static async validarPokemons(level: number, pokemon: PokemonDetails) {
-    level = 15
 
     const acumulador = pokemon.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
     const maxStat = Math.max(...pokemon.stats.map(stat => stat.base_stat));
@@ -224,14 +221,7 @@ export class PokemonService {
 
   }
 
-  static async limpiarPokemonTable() {
-    const tope = 10
-    for (let i = 1; i <= tope; i++) {
-      await prisma.pokemon.delete({
-        where: { id: i }
-      })
-    }
-  }
+  
   static async getRandomPokemon() {
     const random = Math.floor(Math.random() * 1025) + 1;
     const pokemon = prisma.pokemon.findUnique({
@@ -239,28 +229,6 @@ export class PokemonService {
     })
     return pokemon
   }
-static async sobre(){
-  let pokes = []
-  for (let i = 0; i < 6; i++) {
-    let pokemon = await this.getRandomPokemon()
-    if(pokemon) pokes.push(pokemon)
-    
-  }
-  return pokes
-
-}
-
-
-
-  static async generateRandomPokemon() {
-
-    const random = Math.floor(Math.random() * 1025) + 1;
-    const response = await fetch(`${BASE_POKEAPI}/${random}`);
-    const data = await response.json() as PokemonDetails;
-    return data
-
-  }
-
 
   // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 
   static async populatePokemonDatabase() {
@@ -304,6 +272,14 @@ static async sobre(){
       console.log("Base de datos poblada exitosamente.");
     } catch (error) {
       console.error("Error al poblar la base de datos:", error);
+    }
+  }
+  static async limpiarPokemonTable() {
+    const tope = 10
+    for (let i = 1; i <= tope; i++) {
+      await prisma.pokemon.delete({
+        where: { id: i }
+      })
     }
   }
 
