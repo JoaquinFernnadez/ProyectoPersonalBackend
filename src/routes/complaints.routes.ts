@@ -8,3 +8,5 @@ router.get('/list', isAuthenticate, ComplaintsController.getAll )
 router.post('/create', ComplaintsController.createNew )
 
 export default router
+
+

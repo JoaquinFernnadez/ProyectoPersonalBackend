@@ -55,13 +55,24 @@ export class PokemonController{
           res.status(500).json({ message: 'No se pudo obtener el equipo de Pokémon.' })
         }
       }
-      static async getTeam(req: Request, res: Response){
+      static async getTeamForLevel(req: Request, res: Response){
         const idUser = Number (req.query.id)
         try{
-          const  equipo = await PokemonService.getTeam(idUser)
+          const  equipo = await PokemonService.getTeamForLevel(idUser)
           res.json(equipo)
         }catch (error){
           res.status(500).json({message: "No se pudo generar el equipo"})
+        }
+      }
+
+
+      // Solo se usa para poblar la base datos pero no tiene Utilidad en la Web
+      static async poblarDB(req: Request, res: Response) {
+        try{
+        await PokemonService.populatePokemonDatabase()
+        res.json({message: "Guardado correctamente"})
+        }catch(error){
+          res.status(909).json({message : "La cagaste maquinote"})
         }
       }
       

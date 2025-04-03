@@ -1,35 +1,21 @@
 import { prisma } from "../dataBase/database"
 import { UserService } from "./user.service";
-
+import PokemonDetails from "../utils/PokemonDetails"
+import PokemonDetailsBase from "../utils/PokemonDatabase"
+import ApiResponse  from "../utils/ApiResponse"
+import SalidaDatabase from "../utils/SalidasDtabase"
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
 
-interface ApiResponse {
-  results: PokemonResponse[]
-}
-interface PokemonResponse {
-  name: string
-  id: number
-  sprites: {
-    front_default: string
 
-  }
-  unlocked?: boolean
-}
-interface PokemonDetails {
-  name: string
-  height: number
-  weight: number
-  types: string[]
-  abilities: string[]
-  stats: {
-    stat: { name: string }
-    base_stat: number
-  }[]
-}
 
-let newPokemons: PokemonResponse[] = []
-let maxStats:  number[] = []
+
+
+let newPokemons: SalidaDatabase[] = []
+let maxStats: number[] = []
+const pokemonCache = new Map();
+const teamSet = new Set()
+let generatedPokemonNames = new Set();
 
 export class PokemonService {
 
@@ -51,48 +37,19 @@ export class PokemonService {
     return pokemons
 
   }
-  static async getPokemonDetail(id: number) {
-    const response = await fetch(`${BASE_POKEAPI}/${id}`)
-    const data = await response.json() as PokemonDetails
-    const detalles = {
-      name: data.name,
-      height: data.height,
-      weight: data.weight,
-      types: data.types.map((typeInfo: any) => typeInfo.type.name),
-      abilities: data.abilities.map((abilityInfo: any) => abilityInfo.ability.name),
-      stats: data.stats.map((statInfo: any) => ({
-        stat: statInfo.stat.name,
-        base_stat: statInfo.base_stat,
-      })),
-    };
-    return detalles
 
-  }
 
   static async getNewPokemons() {
     newPokemons = []
     for (let i = 0; i < 6; i++) {
-      newPokemons.push(await this.generateRandomPokemon())
+      let pokemon = await this.getRandomPokemon()
+      if(pokemon) newPokemons.push(pokemon)
+      
     }
     return newPokemons
   }
-  static async guardarPokemons(pokemons: PokemonResponse[], idUser: number) {
+  static async guardarPokemons(pokemons: SalidaDatabase[], idUser: number) {
     for (let i = 0; i < pokemons.length; i++) {
-      const search = await prisma.pokemon.findUnique({
-        where: {
-          id: pokemons[i].id,
-          name: pokemons[i].name,
-        }
-      })
-      if (!search) {
-        await prisma.pokemon.create({
-          data: {
-            id: pokemons[i].id,
-            name: pokemons[i].name,
-            sprite: pokemons[i].sprites?.front_default,
-          },
-        })
-      }
       const search2 = await prisma.userPokemon.findUnique({
         where: {
           id: pokemons[i].id,
@@ -106,7 +63,7 @@ export class PokemonService {
             pokemonName: pokemons[i].name,
             unlocked: true,
             isTeam: false,
-            sprite: pokemons[i].sprites?.front_default,
+            sprite: pokemons[i].sprite,
           },
         })
       }
@@ -192,60 +149,162 @@ export class PokemonService {
       throw new Error('Error al obtener el equipo.')
     }
   }
-  
-  static async getTeam(userId: number) {
+  static async getPokemonDetail(id: number) {
+
+    if (pokemonCache.has(id)) {
+      return pokemonCache.get(id);
+    }
+    const response = await fetch(`${BASE_POKEAPI}/${id}`)
+    const data = await response.json() as PokemonDetails
+    const detalles = {
+      name: data.name,
+      height: data.height,
+      weight: data.weight,
+      types: data.types.map((typeInfo: any) => typeInfo.type.name),
+      abilities: data.abilities.map((abilityInfo: any) => abilityInfo.ability.name),
+      stats: data.stats.map((statInfo: any) => ({
+        stat: statInfo.stat.name,
+        base_stat: statInfo.base_stat,
+      })),
+    };
+
+    pokemonCache.set(id, detalles)
+    return detalles
+
+  }
+
+  static async getTeamForLevel(userId: number) {
     maxStats = []
+    teamSet.clear()
     try {
       const team = [] as PokemonDetails[]
       let pokemon: PokemonDetails
-      
+
       const user = await UserService.getById(userId)
 
-      for (let i = 0; team.length <= 6; i++) {
-        const pokemons = await this.generateRandomPokemon()
+      while (team.length < 6) {
 
-        pokemon = await this.getPokemonDetail(pokemons.id)
+        const pokemonsPromises = Array.from({ length: 10 }).map(() => this.generateRandomPokemon());
+        const pokemons = await Promise.all(pokemonsPromises);
 
-        if (await this.validarPokemons(user.level, pokemon) && !team.includes(pokemon)) {
-          team.push(pokemon)
-        } 
+        for (const pokemonsData of pokemons) {
+          if (generatedPokemonNames.has(pokemonsData.name)) {
+            const pokemon = await this.getPokemonDetail(pokemonsData.id) as PokemonDetails
+
+
+            if (await this.validarPokemons(user.level, pokemon) && !teamSet.has(pokemon.name)) {
+              team.push(pokemon)
+              teamSet.add(pokemon.name)
+            }
+          }
+        }
       }
-
       return team
     } catch (error) {
       throw new Error('Error al generar el equipo')
     }
   }
   static async validarPokemons(level: number, pokemon: PokemonDetails) {
-   
-    let acumulador = 0 
-    let maxStat = 0
-    let limitAcum = ( level * 20 ) + 280
-    let minMaxStat = level * 10 
-    let posicion  = 0
+    level = 15
 
-    for(let i = 0; i < 6;i++){
-      acumulador += pokemon.stats[i].base_stat
-      if(maxStat < pokemon.stats[i].base_stat){
-        maxStat = pokemon.stats[i].base_stat
-        posicion = i 
-      }
-    }
-    if(level < 10 &&  acumulador < limitAcum ) return true
-    if(level >= 10 && !maxStats[posicion] && maxStat > minMaxStat && acumulador < limitAcum){
-      maxStats[posicion] = maxStat
-      return true 
+    const acumulador = pokemon.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
+    const maxStat = Math.max(...pokemon.stats.map(stat => stat.base_stat));
+    const posicionMaxStat = pokemon.stats.findIndex(stat => stat.base_stat === maxStat);
+
+    let limitAcum = (level * 20) + 280
+    let minMaxStat = level * 10
+
+    if (level < 10 && acumulador < limitAcum) return true
+
+    if (level >= 10 && !maxStats[posicionMaxStat] && maxStat > minMaxStat) {
+      maxStats[posicionMaxStat] = maxStat
+      return true
     }
     return false
 
   }
+
+  static async limpiarPokemonTable() {
+    const tope = 10
+    for (let i = 1; i <= tope; i++) {
+      await prisma.pokemon.delete({
+        where: { id: i }
+      })
+    }
+  }
+  static async getRandomPokemon() {
+    const random = Math.floor(Math.random() * 1025) + 1;
+    const pokemon = prisma.pokemon.findUnique({
+      where: { id: random }
+    })
+    return pokemon
+  }
+static async sobre(){
+  let pokes = []
+  for (let i = 0; i < 6; i++) {
+    let pokemon = await this.getRandomPokemon()
+    if(pokemon) pokes.push(pokemon)
+    
+  }
+  return pokes
+
+}
+
+
+
   static async generateRandomPokemon() {
 
     const random = Math.floor(Math.random() * 1025) + 1;
     const response = await fetch(`${BASE_POKEAPI}/${random}`);
-    const data = await response.json() as PokemonResponse;
+    const data = await response.json() as PokemonDetails;
     return data
 
+  }
+
+
+  // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 
+  static async populatePokemonDatabase() {
+    try {
+      for (let i = 1; i <= 1025; i++) {
+        const response = await fetch(`${BASE_POKEAPI}/${i}`);
+        const data = await response.json() as PokemonDetailsBase
+
+        // Crear un objeto para almacenar los stats
+        const stats = {} as Record<string, number>
+        data.stats.forEach(stat => {
+          stats[stat.stat.name] = stat.base_stat;
+        });
+
+        // Crear un array con los tipos
+        const types = {} as Record<string, string>
+        data.types.forEach((type, index) => {
+          types[`${index + 1}`] = type.type.name
+        });
+
+        // Crear un array con las habilidades
+        const abilities = {} as Record<string, string>
+        data.abilities.forEach((abilitiy, index) => {
+          abilities[`${index + 1}`] = abilitiy.ability.name;
+        });
+
+        // Guardar el Pokémon en la base de datos usando Prisma
+        await prisma.pokemon.create({
+          data: {
+            id: data.id,
+            name: data.name,
+            sprite: data.sprites.front_default,
+            stats: stats,
+            types: types,
+            abilities: abilities
+          }
+        });
+
+      }
+
+      console.log("Base de datos poblada exitosamente.");
+    } catch (error) {
+      console.error("Error al poblar la base de datos:", error);
+    }
   }
 
 }

@@ -28,7 +28,10 @@ model User {
 model Pokemon {
   id        Int         @id 
   name      String      @unique
-  sprite    String?
+  sprite    String
+  stats     Json
+  types     Json
+  abilities Json
   userPokemons UserPokemon[] // Relación con los usuarios que tienen este Pokémon
 }
 model UserPokemon {
