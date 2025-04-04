@@ -13,4 +13,5 @@ export default interface PokemonDetails {
       front_default: string
   
     }
+    sprite?: string
   }

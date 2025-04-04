@@ -2,7 +2,7 @@ import { prisma } from "../dataBase/database"
 import { UserService } from "./user.service";
 import PokemonDetails from "../utils/PokemonDetails"
 import PokemonDetailsBase from "../utils/PokemonDatabase"
-import ApiResponse  from "../utils/ApiResponse"
+import ApiResponse from "../utils/ApiResponse"
 import SalidaDatabase from "../utils/SalidasDtabase"
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
@@ -40,8 +40,8 @@ export class PokemonService {
     newPokemons = []
     for (let i = 0; i < 6; i++) {
       let pokemon = await this.getRandomPokemon()
-      if(pokemon) newPokemons.push(pokemon)
-      
+      if (pokemon) newPokemons.push(pokemon)
+
     }
     return newPokemons
   }
@@ -158,6 +158,7 @@ export class PokemonService {
       height: data.height,
       weight: data.weight,
       types: data.types.map((typeInfo: any) => typeInfo.type.name),
+      sprite: data.sprites.front_default,
       abilities: data.abilities.map((abilityInfo: any) => abilityInfo.ability.name),
       stats: data.stats.map((statInfo: any) => ({
         stat: statInfo.stat.name,
@@ -171,12 +172,10 @@ export class PokemonService {
   }
 
   static async getTeamForLevel(userId: number) {
-    maxStats = []
-    teamSet.clear()
+    const team = [] as PokemonDetails[]
     try {
-      const team = [] as PokemonDetails[]
-      let pokemon: PokemonDetails
-
+      
+      
       const user = await UserService.getById(userId)
 
       while (team.length < 6) {
@@ -185,25 +184,29 @@ export class PokemonService {
         const pokemons = await Promise.all(pokemonsPromises);
 
         for (const pokemonsData of pokemons) {
-          if(!pokemonsData) return 
-          if (generatedPokemonNames.has(pokemonsData.name)) {
+          if (!pokemonsData) return
+          if (!generatedPokemonNames.has(pokemonsData.name)) {
             const pokemon = await this.getPokemonDetail(pokemonsData.id) as PokemonDetails
+            generatedPokemonNames.add(pokemonsData.name)
 
-
-            if (await this.validarPokemons(user.level, pokemon) && !teamSet.has(pokemon.name)) {
+            if (await this.validarPokemons(user.level, pokemon) && !teamSet.has(pokemon.name) && team.length < 6) {
               team.push(pokemon)
               teamSet.add(pokemon.name)
             }
           }
         }
       }
+      maxStats = []
+      teamSet.clear()
+      generatedPokemonNames.clear()
+
       return team
     } catch (error) {
       throw new Error('Error al generar el equipo')
     }
   }
   static async validarPokemons(level: number, pokemon: PokemonDetails) {
-
+    
     const acumulador = pokemon.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
     const maxStat = Math.max(...pokemon.stats.map(stat => stat.base_stat));
     const posicionMaxStat = pokemon.stats.findIndex(stat => stat.base_stat === maxStat);
@@ -221,12 +224,12 @@ export class PokemonService {
 
   }
 
-  
+
   static async getRandomPokemon() {
     const random = Math.floor(Math.random() * 1025) + 1;
     const pokemon = prisma.pokemon.findUnique({
       where: { id: random }
-    })
+    }) 
     return pokemon
   }
 
@@ -237,19 +240,19 @@ export class PokemonService {
         const response = await fetch(`${BASE_POKEAPI}/${i}`);
         const data = await response.json() as PokemonDetailsBase
 
-        // Crear un objeto para almacenar los stats
+        
         const stats = {} as Record<string, number>
         data.stats.forEach(stat => {
           stats[stat.stat.name] = stat.base_stat;
         });
 
-        // Crear un array con los tipos
+        
         const types = {} as Record<string, string>
         data.types.forEach((type, index) => {
           types[`${index + 1}`] = type.type.name
         });
 
-        // Crear un array con las habilidades
+        
         const abilities = {} as Record<string, string>
         data.abilities.forEach((abilitiy, index) => {
           abilities[`${index + 1}`] = abilitiy.ability.name;
@@ -274,6 +277,7 @@ export class PokemonService {
       console.error("Error al poblar la base de datos:", error);
     }
   }
+  // solo se usa para limpiar registros de una tabla, esn este caso la de pokemons
   static async limpiarPokemonTable() {
     const tope = 10
     for (let i = 1; i <= tope; i++) {

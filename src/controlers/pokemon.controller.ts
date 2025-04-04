@@ -64,6 +64,7 @@ export class PokemonController{
           res.status(500).json({message: "No se pudo generar el equipo"})
         }
       }
+      
 
 
       // Solo se usa para poblar la base datos pero no tiene Utilidad en la Web

@@ -12,4 +12,5 @@ router.get('/verEquipo',  PokemonController.verEquipo )
 router.get('/getTeams' , PokemonController.getTeamForLevel)
 router.get('/poblarDB' , PokemonController.poblarDB)
 
+
 export default router
