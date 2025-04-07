@@ -14,7 +14,7 @@ export class UserService {
     static async getAll(idUser: number) {
         const rol = await prisma.user.findUnique({ where: { id: idUser, role: 'Admin' } })
         if (!rol) throw new HttpException(401, 'Unauthorized')
-        const Users = await prisma.user.findMany()
+        const Users = await prisma.user.findMany({omit:{password: true}})
         return Users
     }
     static async getById(id: number) {
@@ -29,14 +29,16 @@ export class UserService {
         const user = await this.getById(idUser)
         return user.level
     }
-    static async updatelvl(idUser: number, body: number) {
+    static async updatelvl(idUser: number, level: number) {
+        console.log(level)
         await prisma.user.update({
             where: { id: idUser },
             data: {
-                level: body
+                level
             }
         })
-        this.updateMaxLvl(idUser, body)
+    
+        this.updateMaxLvl(idUser, level)
     }
     static async updateMaxLvl(idUser: number, body: number) {
 
@@ -49,5 +51,22 @@ export class UserService {
                 }
             })
         }
+        return  
+    }
+
+    static async getBestScores() {
+        const topPlayers = await prisma.user.findMany({
+            orderBy: {
+                maxLevel : "desc"
+            },
+            take : 100,
+            omit :{
+                password: true,
+                role: true,
+                email: true,
+                level: true
+            }
+        })
+        return topPlayers
     }
 }
