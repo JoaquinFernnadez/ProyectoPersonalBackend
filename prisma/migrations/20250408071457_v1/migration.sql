@@ -6,14 +6,15 @@ CREATE TABLE "User" (
     "role" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "level" INTEGER NOT NULL DEFAULT 0,
-    "maxLevel" INTEGER NOT NULL DEFAULT 0
+    "maxLevel" INTEGER NOT NULL DEFAULT 0,
+    "pokePuntos" INTEGER NOT NULL DEFAULT 30
 );
 
 -- CreateTable
 CREATE TABLE "Pokemon" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
-    "sprite" TEXT,
+    "sprite" TEXT NOT NULL,
     "stats" JSONB NOT NULL,
     "types" JSONB NOT NULL,
     "abilities" JSONB NOT NULL

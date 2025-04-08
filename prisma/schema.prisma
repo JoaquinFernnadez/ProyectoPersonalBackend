@@ -22,6 +22,7 @@ model User {
   password  String    // Contraseña del usuario
   level     Int     @default(0)
   maxLevel  Int     @default(0)
+  pokePuntos Int    @default(30)
   pokemons    UserPokemon[] // Relación con los Pokémon del usuario
   quejas      Quejas[]
 }

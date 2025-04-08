@@ -40,13 +40,21 @@ export class AuthController{
 
     static async getAuthenticatedUser (req: Request, res: Response, next: NextFunction){
         try {
-            const token = req.cookies.token;
+            const token = req.cookies.token
             console.log(token)
-            if (!token)  res.status(401).json({ message: "No autenticado" });
-            const decoded = jwt.verify(token, TOKEN_PASSWORD);
+            if (!token)  res.status(401).json({ message: "No autenticado" })
+            const decoded = jwt.verify(token, TOKEN_PASSWORD)
             res.status(200).json(decoded)
         } catch (error) {
             next(error)
         }
-    };
+    }
+    static async logout(req: Request, res: Response, next: NextFunction) {
+        try {
+            res.clearCookie('token')
+            res.status(204).json({ message: 'Logout successfully:' })
+        } catch (error) {
+            next(error)
+        }
+    }
 }

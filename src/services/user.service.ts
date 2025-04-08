@@ -69,4 +69,22 @@ export class UserService {
         })
         return topPlayers
     }
+     // Body es un array tal que [arg1,arg2] arg1: Indica si suma o resta puntos | arg2: Cantidad de puntos
+    static async actualizarPuntos(idUser: number, body: number[]){
+        const puntos = body[1]
+        const user = await prisma.user.findUnique({where:{id: idUser}})
+        const userPoints = user?.pokePuntos || 0
+        
+        if(body[0] == 1) {
+            await prisma.user.update({where: {id: idUser}, data: {pokePuntos: (userPoints - puntos)}})
+        }else 
+            await prisma.user.update({where: {id: idUser}, data: {pokePuntos: (userPoints + puntos)}})
+    
+
+
+    }
+    static async getPuntos(idUser: number){
+        const user = await this.getById(idUser)
+        return user.pokePuntos
+    }
 }

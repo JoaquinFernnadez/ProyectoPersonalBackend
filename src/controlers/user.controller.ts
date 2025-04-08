@@ -34,4 +34,20 @@ export class UserController {
             res.status(500).json(error)
         }
     }
+    static async actualizarPuntos(req: Request, res: Response){
+        try{
+            const userId = Number(req.query.id)
+            const body = req.body.array
+            
+            await UserService.actualizarPuntos(userId,body)
+            res.status(200).json({message: "Se actualizaron los puntos del Usuario"})
+        }catch(error){
+            res.status(500).json(error)
+        }
+    }
+    static async getPuntos(req: Request, res: Response){
+        const idUser = Number (req.query.id)
+        const puntos = await UserService.getPuntos(idUser)
+        res.status(200).json(puntos)
+    }
 }
