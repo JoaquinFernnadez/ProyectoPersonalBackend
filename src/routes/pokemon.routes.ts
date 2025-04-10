@@ -11,6 +11,7 @@ router.post('/desbloqueados/guardarEquipo',PokemonController.guardarEquipoUsuari
 router.get('/verEquipo',  PokemonController.verEquipo )
 router.get('/getTeams' , PokemonController.getTeamForLevel)
 router.get('/poblarDB' , PokemonController.poblarDB)
+router.get('/news',PokemonController.getNews )
 
 
 export default router

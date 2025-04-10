@@ -64,6 +64,14 @@ export class PokemonController{
           res.status(500).json({message: "No se pudo generar el equipo"})
         }
       }
+      static async getNews(req: Request, res: Response){
+        try{
+          const data = await PokemonService.getNoticias()
+          res.json(data)
+        }catch(error){
+          res.status(500).json({message: "No se pudieron cargar las noticias"})
+        }
+      }
       
 
 

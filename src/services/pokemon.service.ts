@@ -4,8 +4,16 @@ import PokemonDetails from "../utils/PokemonDetails"
 import PokemonDetailsBase from "../utils/PokemonDatabase"
 import ApiResponse from "../utils/ApiResponse"
 import SalidaDatabase from "../utils/SalidasDtabase"
+import { format } from 'date-fns';
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
+const API_NEWS_KEY = process.env.API_KEY
+
+interface NewsResponse{
+  status: string
+  totalResults: number
+  articles: []
+}
 
 
 let newPokemons: SalidaDatabase[] = []
@@ -174,8 +182,8 @@ export class PokemonService {
   static async getTeamForLevel(userId: number) {
     const team = [] as PokemonDetails[]
     try {
-      
-      
+
+
       const user = await UserService.getById(userId)
 
       while (team.length < 6) {
@@ -206,7 +214,7 @@ export class PokemonService {
     }
   }
   static async validarPokemons(level: number, pokemon: PokemonDetails) {
-    
+
     const acumulador = pokemon.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
     const maxStat = Math.max(...pokemon.stats.map(stat => stat.base_stat));
     const posicionMaxStat = pokemon.stats.findIndex(stat => stat.base_stat === maxStat);
@@ -229,9 +237,35 @@ export class PokemonService {
     const random = Math.floor(Math.random() * 1025) + 1;
     const pokemon = prisma.pokemon.findUnique({
       where: { id: random }
-    }) 
+    })
     return pokemon
   }
+
+  static async getNoticias() {
+    const url = "https://newsapi.org/v2/everything"
+  
+    const formattedDate = format(new Date(), 'yyyy-MM-dd');
+    
+    const params = new URLSearchParams({
+      q: 'Pokemon', 
+      pageSize: '21',         
+      /* from: `${formattedDate}`,   
+      sortBy: 'popularity',  */
+      apiKey: `${API_NEWS_KEY}`
+    })
+    
+    try{
+      const response = await fetch(`${url}?${params}`)
+      if(!response.ok) throw new Error('Error en la solicitud')
+      const data = await response.json() as NewsResponse
+
+      return data.articles
+    }catch(error){
+      console.error('Error' + error)
+    }
+
+  }
+
 
   // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 
   static async populatePokemonDatabase() {
@@ -240,25 +274,25 @@ export class PokemonService {
         const response = await fetch(`${BASE_POKEAPI}/${i}`);
         const data = await response.json() as PokemonDetailsBase
 
-        
+
         const stats = {} as Record<string, number>
         data.stats.forEach(stat => {
           stats[stat.stat.name] = stat.base_stat;
         });
 
-        
+
         const types = {} as Record<string, string>
         data.types.forEach((type, index) => {
           types[`${index + 1}`] = type.type.name
-        });
+        })
 
-        
+
         const abilities = {} as Record<string, string>
         data.abilities.forEach((abilitiy, index) => {
-          abilities[`${index + 1}`] = abilitiy.ability.name;
-        });
+          abilities[`${index + 1}`] = abilitiy.ability.name
+        })
 
-        // Guardar el Pokémon en la base de datos usando Prisma
+
         await prisma.pokemon.create({
           data: {
             id: data.id,
@@ -268,7 +302,7 @@ export class PokemonService {
             types: types,
             abilities: abilities
           }
-        });
+        })
 
       }
 
