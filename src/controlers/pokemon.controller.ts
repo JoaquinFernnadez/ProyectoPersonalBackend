@@ -72,6 +72,44 @@ export class PokemonController{
           res.status(500).json({message: "No se pudieron cargar las noticias"})
         }
       }
+      static async showGTS(req: Request, res: Response){
+        try{
+          const data = await PokemonService.showGTS()
+          res.json(data)
+        }catch(error){
+          res.status(500).json({message: "No se pudo cargar la GTS"})
+        }
+      }
+
+
+      static async newTrade(req: Request, res: Response){
+        const info = req.body
+        try{
+          const data = await PokemonService.newTrade(info)
+          res.json(data)
+        }catch(error){
+          res.status(500).json({message: "No se pudo cargar la GTS"})
+        }
+      }
+      static async acceptTrade(req: Request, res: Response){
+        const  id  = parseInt(req.params.id)  // id del intercambio que se va a realizar 
+        const { usuarioQueAceptaId } = req.body;
+
+        try{
+          const data = await PokemonService.acceptTrade(id, usuarioQueAceptaId)
+        }catch(error){
+          res.status(500).json({message: "Error " + error})
+        }
+      }
+      static async cancelTrade(req: Request, res: Response){
+        const  id  = parseInt(req.params.id)  // id del intercambio que se va a realizar 
+
+        try{
+          const data = await PokemonService.cancelTrade(id)
+        }catch(error){
+          res.status(500).json({message: "Error " + error})
+        }
+      }
       
 
 

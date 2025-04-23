@@ -4,12 +4,12 @@ import PokemonDetails from "../utils/PokemonDetails"
 import PokemonDetailsBase from "../utils/PokemonDatabase"
 import ApiResponse from "../utils/ApiResponse"
 import SalidaDatabase from "../utils/SalidasDtabase"
-import { format } from 'date-fns';
+import { IntercambioGTS } from "@prisma/client";
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
 const API_NEWS_KEY = process.env.API_KEY
 
-interface NewsResponse{
+interface NewsResponse {
   status: string
   totalResults: number
   articles: []
@@ -243,27 +243,136 @@ export class PokemonService {
 
   static async getNoticias() {
     const url = "https://newsapi.org/v2/everything"
-  
-    const formattedDate = format(new Date(), 'yyyy-MM-dd');
-    
+
+    // const formattedDate = format(new Date(), 'yyyy-MM-dd');
+
     const params = new URLSearchParams({
-      q: 'Pokemon', 
-      pageSize: '21',         
+      q: 'Pokemon',
+      pageSize: '21',
       /* from: `${formattedDate}`,   
       sortBy: 'popularity',  */
       apiKey: `${API_NEWS_KEY}`
     })
-    
-    try{
+
+    try {
       const response = await fetch(`${url}?${params}`)
-      if(!response.ok) throw new Error('Error en la solicitud')
+      if (!response.ok) throw new Error('Error en la solicitud')
       const data = await response.json() as NewsResponse
 
       return data.articles
-    }catch(error){
+    } catch (error) {
       console.error('Error' + error)
     }
 
+  }
+  static async showGTS() {
+    try {
+      const data = await prisma.intercambioGTS.findMany({
+        where: { estado: "abierto" }
+      })
+      return data
+    } catch (error) {
+      console.log('Erorr' + error)
+    }
+  }
+
+  static async newTrade(data: IntercambioGTS) {
+    try {
+      const pokemon = await prisma.userPokemon.findUnique({
+        where: {
+          userId: data.usuarioId,
+          id: data.userPokemonId
+        }
+      })
+      if (!pokemon) return console.log("Necesitas tener el pokemon que ofreces")
+
+      const nuevo = await prisma.intercambioGTS.create({
+        data: {
+          usuarioId: data.usuarioId,
+          userPokemonId: pokemon.id,
+          pokemonDeseadoId: data.pokemonDeseadoId,
+          pokemonSprite: pokemon.sprite || ""
+        },
+        include: {
+          pokemonDeseado: true,
+          pokemonOfrecido: true
+        }
+      })
+
+    } catch (error) {
+      console.log("Error " + error)
+    }
+  }
+
+  static async acceptTrade(id: any, usuarioAceptaId: any) {
+    try {
+      const trade = await prisma.intercambioGTS.update({
+        where: { id: id },
+        data: { estado: "intercambiado" }
+      })
+      const usuarioPropusoId = trade.usuarioId
+
+
+      // Primero: Elimino el pokemon de quien acepto el intercambio
+
+      await prisma.userPokemon.deleteMany({
+        where: {
+          id: trade.pokemonDeseadoId,
+          userId: usuarioAceptaId
+        },
+      })
+
+      // Segundo: Elimino el pokemon del usuario que propuso el intercambio 
+
+      await prisma.userPokemon.deleteMany({
+        where: {
+          userId: usuarioPropusoId,
+          id: trade.userPokemonId,
+        },
+      })
+
+      const pokemonOfrecido = await prisma.pokemon.findUnique({ where: { id: trade.userPokemonId } })
+      const pokemonDeseado = await prisma.pokemon.findUnique({ where: { id: trade.pokemonDeseadoId } })
+
+      // Guardo el pokemon si no existe
+      const pokemon1 = await prisma.userPokemon.findUnique({ where: { userId: usuarioAceptaId, id: trade.userPokemonId } })
+      if (!pokemon1) await prisma.userPokemon.create({
+        data: {
+          id: trade.userPokemonId,
+          userId: usuarioAceptaId,
+          pokemonName: pokemonOfrecido?.name,
+          unlocked: true,
+          isTeam: false,
+          sprite: pokemonOfrecido?.sprite
+        }
+      })
+
+      // Guardo el pokemon si no existe
+      const pokemon2 = await prisma.userPokemon.findUnique({ where: { userId: usuarioAceptaId, id: trade.userPokemonId } })
+      if (!pokemon2) await prisma.userPokemon.create({
+        data: {
+          id: trade.userPokemonId,
+          userId: usuarioAceptaId,
+          pokemonName: pokemonDeseado?.name,
+          unlocked: true,
+          isTeam: false,
+          sprite: pokemonDeseado?.sprite
+        }
+      })
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  static async cancelTrade(id: any) {
+    try {
+      const trade = await prisma.intercambioGTS.delete({
+        where: { id: id }
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
 

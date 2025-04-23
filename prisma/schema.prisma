@@ -15,42 +15,70 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement()) // ID único para el usuario
-  name  String    @unique                      // Nombre de usuario único
-  email     String    @unique                      // Email único
-  role      String 
-  password  String    // Contraseña del usuario
-  level     Int     @default(0)
-  maxLevel  Int     @default(0)
-  pokePuntos Int    @default(30)
-  pokemons    UserPokemon[] // Relación con los Pokémon del usuario
-  quejas      Quejas[]
+  id         Int           @id @default(autoincrement()) 
+  name       String        @unique 
+  email      String        @unique 
+  role       String
+  password   String 
+  level      Int           @default(0)
+  maxLevel   Int           @default(0)
+  pokePuntos Int           @default(30)
+  pokemons   UserPokemon[] 
+  quejas     Quejas[]
+  intercambios IntercambioGTS[]
 }
-model Pokemon {
-  id        Int         @id 
-  name      String      @unique
-  sprite    String
-  stats     Json
-  types     Json
-  abilities Json
-  userPokemons UserPokemon[] // Relación con los usuarios que tienen este Pokémon
-}
-model UserPokemon {
-  id        Int       @id  // Identificador único para esta relación
-  userId    Int      // Relación con el usuario
-  pokemonName String      // Relación con el Pokémon 
-  unlocked  Boolean  @default(false) // Indica si el Pokémon está desbloqueado
-  isTeam    Boolean  @default(false) // Indica si el Pokémon está en el equipo del usuario
-  sprite    String?
-  user      User?     @relation(fields: [userId], references: [id]) // Relación con User
-  pokemon   Pokemon?  @relation(fields: [pokemonName], references: [name]) // Relación con Pokemon
 
-  @@unique([userId, pokemonName]) // Asegura que no se repitan las relaciones
+model Pokemon {
+  id           Int           @id
+  name         String        @unique
+  sprite       String
+  stats        Json
+  types        Json
+  abilities    Json
+
+  userPokemons UserPokemon[] 
+  deseadoEn          IntercambioGTS[]  @relation("Deseado", fields: [], references: [])
+  ofrecidoEn         IntercambioGTS[]  @relation("Ofrecido", fields: [], references: [])
 }
+
+model UserPokemon {
+  id          Int      @id 
+  userId      Int 
+  pokemonName String  
+  unlocked    Boolean  @default(false) 
+  isTeam      Boolean  @default(false) 
+  sprite      String?
+  user        User?    @relation(fields: [userId], references: [id]) 
+  pokemon     Pokemon? @relation(fields: [pokemonName], references: [name]) 
+
+  @@unique([userId, pokemonName]) 
+}
+
 model Quejas {
-  id       Int      @id @default(autoincrement())
-  userId   Int   
-  titulo   String 
-  descripcion  String 
-  user    User    @relation(fields: [userId], references: [id])
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  titulo      String
+  descripcion String
+  user        User   @relation(fields: [userId], references: [id])
+}
+
+enum EstadoIntercambio {
+  abierto
+  intercambiado
+}
+
+model IntercambioGTS {
+  id               Int              @id @default(autoincrement())
+  usuarioId        Int
+  userPokemonId    Int
+  pokemonSprite    String 
+  pokemonDeseadoId Int
+  estado           EstadoIntercambio @default(abierto)
+  fechaCreacion    DateTime          @default(now())
+
+  usuario             User             @relation(fields: [usuarioId], references: [id])
+  pokemonOfrecido     Pokemon          @relation("Ofrecido", fields: [userPokemonId], references: [id])
+  pokemonDeseado      Pokemon          @relation("Deseado", fields: [pokemonDeseadoId], references: [id])
+
+  
 }
