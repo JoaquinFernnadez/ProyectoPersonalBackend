@@ -25,6 +25,7 @@ export class UserController {
         }
 
     }
+    
     static async getBestScores(req: Request, res: Response){
         try{
             const topScores = await UserService.getBestScores()

@@ -12,11 +12,14 @@ router.get('/verEquipo',  PokemonController.verEquipo )
 router.get('/getTeams' , PokemonController.getTeamForLevel)
 router.get('/poblarDB' , PokemonController.poblarDB)
 router.get('/news',PokemonController.getNews )
+router.get('/getSprite', PokemonController.getSprite)
 
 router.get('/gts',PokemonController.showGTS)
+router.get('/gts/own', PokemonController.showOwnGts)
 router.post('/gts/crear', PokemonController.newTrade)
 router.post('/gts/aceptar', PokemonController.acceptTrade)
-router.post('/gts/cancelar', PokemonController.cancelTrade) 
+router.get('/gts/cancelar', PokemonController.cancelTrade)
+router.get('/listPokeNames', PokemonController.listPokeNames)
 
 
 export default router

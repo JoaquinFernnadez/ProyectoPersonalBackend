@@ -68,11 +68,12 @@ enum EstadoIntercambio {
 }
 
 model IntercambioGTS {
-  id               Int              @id @default(autoincrement())
+  id               Int  @id @default(autoincrement())
   usuarioId        Int
   userPokemonId    Int
   pokemonSprite    String 
   pokemonDeseadoId Int
+  pokemonDeseadoSprite  String
   estado           EstadoIntercambio @default(abierto)
   fechaCreacion    DateTime          @default(now())
 

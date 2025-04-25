@@ -4,7 +4,7 @@ import PokemonDetails from "../utils/PokemonDetails"
 import PokemonDetailsBase from "../utils/PokemonDatabase"
 import ApiResponse from "../utils/ApiResponse"
 import SalidaDatabase from "../utils/SalidasDtabase"
-import { IntercambioGTS } from "@prisma/client";
+import Intercambio from "../utils/IntercambioGTS";
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
 const API_NEWS_KEY = process.env.API_KEY
@@ -265,10 +265,32 @@ export class PokemonService {
     }
 
   }
-  static async showGTS() {
+  static async showGTS(id: number) {
+
     try {
       const data = await prisma.intercambioGTS.findMany({
-        where: { estado: "abierto" }
+        where: { estado: "abierto" },
+        include: {
+          pokemonDeseado: true,
+          pokemonOfrecido: true
+        }
+      })
+      const filtrado = data.filter(item => item.usuarioId !== id);
+
+      return filtrado
+    } catch (error) {
+      console.log('Erorr' + error)
+    }
+  }
+  static async showOwnGts(id: number) {
+
+    try {
+      const data = await prisma.intercambioGTS.findMany({
+        where: { estado: "abierto",  usuarioId: id },
+        include: {
+          pokemonDeseado: true,
+          pokemonOfrecido: true
+        }
       })
       return data
     } catch (error) {
@@ -276,7 +298,8 @@ export class PokemonService {
     }
   }
 
-  static async newTrade(data: IntercambioGTS) {
+  static async newTrade(data: Intercambio) {
+
     try {
       const pokemon = await prisma.userPokemon.findUnique({
         where: {
@@ -284,19 +307,27 @@ export class PokemonService {
           id: data.userPokemonId
         }
       })
+
       if (!pokemon) return console.log("Necesitas tener el pokemon que ofreces")
+
+      // Elimino el pokemon para evitar que el usuario pueda proponer varios intercambios con el mismo pokemon
+
+      await prisma.userPokemon.delete({
+        where: {
+          id: pokemon.id,
+          userId: pokemon.userId
+        }
+      })
 
       const nuevo = await prisma.intercambioGTS.create({
         data: {
           usuarioId: data.usuarioId,
           userPokemonId: pokemon.id,
           pokemonDeseadoId: data.pokemonDeseadoId,
-          pokemonSprite: pokemon.sprite || ""
+          pokemonSprite: data.pokemonSprite.sprite,
+          pokemonDeseadoSprite: data.pokemonDeseadoSprite.sprite
         },
-        include: {
-          pokemonDeseado: true,
-          pokemonOfrecido: true
-        }
+
       })
 
     } catch (error) {
@@ -304,18 +335,16 @@ export class PokemonService {
     }
   }
 
-  static async acceptTrade(id: any, usuarioAceptaId: any) {
+  static async acceptTrade(id: number, usuarioAceptaId: number) {
     try {
       const trade = await prisma.intercambioGTS.update({
         where: { id: id },
         data: { estado: "intercambiado" }
       })
-      const usuarioPropusoId = trade.usuarioId
-
 
       // Primero: Elimino el pokemon de quien acepto el intercambio
-
-      await prisma.userPokemon.deleteMany({
+      
+      await prisma.userPokemon.delete({
         where: {
           id: trade.pokemonDeseadoId,
           userId: usuarioAceptaId
@@ -324,52 +353,119 @@ export class PokemonService {
 
       // Segundo: Elimino el pokemon del usuario que propuso el intercambio 
 
-      await prisma.userPokemon.deleteMany({
-        where: {
-          userId: usuarioPropusoId,
-          id: trade.userPokemonId,
-        },
-      })
+    
 
       const pokemonOfrecido = await prisma.pokemon.findUnique({ where: { id: trade.userPokemonId } })
       const pokemonDeseado = await prisma.pokemon.findUnique({ where: { id: trade.pokemonDeseadoId } })
 
       // Guardo el pokemon si no existe
+      // Pokemon para quien acepto el intercambio
       const pokemon1 = await prisma.userPokemon.findUnique({ where: { userId: usuarioAceptaId, id: trade.userPokemonId } })
-      if (!pokemon1) await prisma.userPokemon.create({
+      if (!pokemon1) {
+        await prisma.userPokemon.create({
         data: {
           id: trade.userPokemonId,
-          userId: usuarioAceptaId,
-          pokemonName: pokemonOfrecido?.name,
+          user:{
+            connect: {id : usuarioAceptaId}
+          },
+          pokemon:{
+            connect: { name: pokemonOfrecido?.name}
+          },
           unlocked: true,
           isTeam: false,
           sprite: pokemonOfrecido?.sprite
+        },
+        include: {
+          user: true,
+          pokemon: true
         }
       })
+    }
 
       // Guardo el pokemon si no existe
-      const pokemon2 = await prisma.userPokemon.findUnique({ where: { userId: usuarioAceptaId, id: trade.userPokemonId } })
-      if (!pokemon2) await prisma.userPokemon.create({
+      // Pokemon para quien propuso el intercambio
+
+      const pokemon2 = await prisma.userPokemon.findUnique({ where: { userId: trade.usuarioId, id: trade.pokemonDeseadoId } })
+      if (!pokemon2){ await prisma.userPokemon.create({
         data: {
-          id: trade.userPokemonId,
-          userId: usuarioAceptaId,
-          pokemonName: pokemonDeseado?.name,
+          id: trade.pokemonDeseadoId,
+          user:{
+            connect: {id : trade.usuarioId}
+          },
+          pokemon:{
+            connect: { name: pokemonDeseado?.name}
+          },
           unlocked: true,
           isTeam: false,
           sprite: pokemonDeseado?.sprite
         }
       })
-
+    }
     } catch (error) {
       console.log(error)
     }
   }
 
   static async cancelTrade(id: any) {
+    
     try {
       const trade = await prisma.intercambioGTS.delete({
         where: { id: id }
       })
+      await this.recuperarPokemon(trade.userPokemonId, trade.usuarioId)
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  static async recuperarPokemon(idPokemon: number, idUser: number) {
+    const pokemon = await prisma.pokemon.findUnique({
+      where: { id: idPokemon }
+    })
+    const comprobar = await prisma.userPokemon.findUnique({
+      where: {
+        id: idPokemon,
+        userId: idUser
+      }
+    })
+    if (comprobar) return
+    else {
+      await prisma.userPokemon.create({
+        data: {
+          id: pokemon?.id || 1,
+          userId: idUser,
+          pokemonName: pokemon?.name || "",
+          sprite: pokemon?.sprite,
+          unlocked: true
+
+        },
+        include: {
+          pokemon: true,
+          user: true,
+
+        }
+      })
+    }
+  }
+
+  static async listPokeName() {
+    const PokemonNames = []
+    const pokemon = await prisma.pokemon.findMany()
+    for (let i = 0; i < 1025; i++) {
+      PokemonNames[i] = pokemon[i].name
+    }
+    return PokemonNames
+  }
+
+  static async getSprite(name: string) {
+    try {
+      const pokemon = await prisma.pokemon.findUnique({
+        where: {
+          name
+        }
+      })
+      return pokemon?.sprite
     } catch (error) {
       console.log(error)
     }

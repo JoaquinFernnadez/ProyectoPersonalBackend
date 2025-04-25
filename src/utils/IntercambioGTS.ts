@@ -3,6 +3,13 @@ export default interface Intercambio {
     usuarioId : number 
     userPokemonId : number 
     pokemonDeseadoId : number
+    pokemonSprite: {
+        sprite: string
+    }
+    pokemonDeseadoSprite : {
+        sprite: string
+    }
+
     estado:  EstadoIntercambio
     fechaCreacion : Date
 }

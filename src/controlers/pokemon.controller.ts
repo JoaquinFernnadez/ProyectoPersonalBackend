@@ -73,8 +73,18 @@ export class PokemonController{
         }
       }
       static async showGTS(req: Request, res: Response){
+        const id = Number (req.query.id) || 0
         try{
-          const data = await PokemonService.showGTS()
+          const data = await PokemonService.showGTS(id)
+          res.json(data)
+        }catch(error){
+          res.status(500).json({message: "No se pudo cargar la GTS"})
+        }
+      }
+      static async showOwnGts(req: Request, res: Response){
+        const id = Number (req.query.id) 
+        try{
+          const data = await PokemonService.showOwnGts(id)
           res.json(data)
         }catch(error){
           res.status(500).json({message: "No se pudo cargar la GTS"})
@@ -86,28 +96,49 @@ export class PokemonController{
         const info = req.body
         try{
           const data = await PokemonService.newTrade(info)
-          res.json(data)
+          res.status(200).json(data)
         }catch(error){
           res.status(500).json({message: "No se pudo cargar la GTS"})
         }
       }
       static async acceptTrade(req: Request, res: Response){
-        const  id  = parseInt(req.params.id)  // id del intercambio que se va a realizar 
-        const { usuarioQueAceptaId } = req.body;
+        const  id  = Number (req.query.id)  // id del intercambio que se va a realizar 
+        const { usuarioAceptaId } = req.body
+        try{
+          const data = await PokemonService.acceptTrade(id, usuarioAceptaId)
+          res.status(200).json()
+        }catch(error){
+          res.status(500).json({message: "Error " + error})
+        }
+      } 
+      static async cancelTrade(req: Request, res: Response){
+        const  id  = Number (req.query.id)  // id del intercambio que se va a realizar 
 
         try{
-          const data = await PokemonService.acceptTrade(id, usuarioQueAceptaId)
+          const data = await PokemonService.cancelTrade(id)
+          res.status(200).json({success: true})
         }catch(error){
           res.status(500).json({message: "Error " + error})
         }
       }
-      static async cancelTrade(req: Request, res: Response){
-        const  id  = parseInt(req.params.id)  // id del intercambio que se va a realizar 
 
+      static async listPokeNames(req: Request,res: Response){
         try{
-          const data = await PokemonService.cancelTrade(id)
+        const data = await PokemonService.listPokeName()
+        res.status(200).json(data)
         }catch(error){
-          res.status(500).json({message: "Error " + error})
+          res.status(500).json({message: "No se pudo cargar la lista de PokeNames"})
+        }
+      }
+
+      static async getSprite(req: Request, res: Response){
+        const name = req.query.name as string
+        try{
+          const sprite = await PokemonService.getSprite(name)
+          console.log(sprite)
+          res.status(200).json({sprite})
+        }catch(error){
+          res.status(500).json({message: "No se pudo obtener el Sprite"})
         }
       }
       
