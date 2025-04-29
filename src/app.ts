@@ -1,4 +1,4 @@
-import express, {Response, Request} from "express"
+import express, { Response, Request } from "express"
 import authRouter from "./routes/auth.routes"
 import userRouter from "./routes/user.routes"
 import pokemonRouter from "./routes/pokemon.routes"
@@ -7,18 +7,12 @@ import rateLimit from "express-rate-limit"
 import helmet from "helmet"
 import compression from "compression"
 import cookieParser from "cookie-parser"
-
-
 import cors from "cors"
 
-
-
 const app = express()
-// Limitar cors en un futuro 
-// cambiar la url al deployar
 
 app.use(cors({
-    origin: ['http://localhost:5173','https://proyectopersonalfronted.onrender.com'],
+    origin: ['http://localhost:5173', 'https://proyectopersonalfronted.onrender.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -35,16 +29,13 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
+app.use('/api/auth', authRouter)
+app.use('/api/user', userRouter)
+app.use('/api/pokemon', pokemonRouter)
+app.use('/api/complaints', complaintsRouter)
 
-app.use('/api/auth',authRouter)
-app.use('/api/user',userRouter)
-app.use('/api/pokemon',pokemonRouter)
-app.use('/api/complaints',complaintsRouter)
-
-app.get('/', (req:Request, res:Response) => {
-    res.send('Bienvenido al backend (api rest) ')
+app.get('/', (req: Request, res: Response) => {
+    res.send('Bienvenido al backend (api rest)');
 })
 
-export default app 
-
-
+export default app

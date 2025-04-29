@@ -15,43 +15,47 @@ datasource db {
 }
 
 model User {
-  id         Int           @id @default(autoincrement()) 
-  name       String        @unique 
-  email      String        @unique 
-  role       String
-  password   String 
-  level      Int           @default(0)
-  maxLevel   Int           @default(0)
-  pokePuntos Int           @default(30)
-  pokemons   UserPokemon[] 
-  quejas     Quejas[]
+  id           Int              @id @default(autoincrement())
+  name         String           @unique
+  email        String           @unique
+  role         String
+  password     String
+  level        Int              @default(0)
+  maxLevel     Int              @default(0)
+  pokePuntos   Int              @default(30)
+  wins         Int              @default(0)
+  pokemons     UserPokemon[]
+  quejas       Quejas[]
   intercambios IntercambioGTS[]
+
+  gamesAsPlayer1 Game[] @relation("Player1Games")
+  gamesAsPlayer2 Game[] @relation("Player2Games")
 }
 
 model Pokemon {
-  id           Int           @id
-  name         String        @unique
-  sprite       String
-  stats        Json
-  types        Json
-  abilities    Json
+  id        Int    @id
+  name      String @unique
+  sprite    String
+  stats     Json
+  types     Json
+  abilities Json
 
-  userPokemons UserPokemon[] 
-  deseadoEn          IntercambioGTS[]  @relation("Deseado", fields: [], references: [])
-  ofrecidoEn         IntercambioGTS[]  @relation("Ofrecido", fields: [], references: [])
+  userPokemons UserPokemon[]
+  deseadoEn    IntercambioGTS[] @relation("Deseado", fields: [], references: [])
+  ofrecidoEn   IntercambioGTS[] @relation("Ofrecido", fields: [], references: [])
 }
 
 model UserPokemon {
-  id          Int      @id 
-  userId      Int 
-  pokemonName String  
-  unlocked    Boolean  @default(false) 
-  isTeam      Boolean  @default(false) 
+  id          Int      @id
+  userId      Int
+  pokemonName String
+  unlocked    Boolean  @default(false)
+  isTeam      Boolean  @default(false)
   sprite      String?
-  user        User?    @relation(fields: [userId], references: [id]) 
-  pokemon     Pokemon? @relation(fields: [pokemonName], references: [name]) 
+  user        User?    @relation(fields: [userId], references: [id])
+  pokemon     Pokemon? @relation(fields: [pokemonName], references: [name])
 
-  @@unique([userId, pokemonName]) 
+  @@unique([userId, pokemonName])
 }
 
 model Quejas {
@@ -68,18 +72,48 @@ enum EstadoIntercambio {
 }
 
 model IntercambioGTS {
-  id               Int  @id @default(autoincrement())
-  usuarioId        Int
-  userPokemonId    Int
-  pokemonSprite    String 
-  pokemonDeseadoId Int
-  pokemonDeseadoSprite  String
-  estado           EstadoIntercambio @default(abierto)
-  fechaCreacion    DateTime          @default(now())
+  id                   Int               @id @default(autoincrement())
+  usuarioId            Int
+  userPokemonId        Int
+  pokemonSprite        String
+  pokemonDeseadoId     Int
+  pokemonDeseadoSprite String
+  estado               EstadoIntercambio @default(abierto)
+  fechaCreacion        DateTime          @default(now())
 
-  usuario             User             @relation(fields: [usuarioId], references: [id])
-  pokemonOfrecido     Pokemon          @relation("Ofrecido", fields: [userPokemonId], references: [id])
-  pokemonDeseado      Pokemon          @relation("Deseado", fields: [pokemonDeseadoId], references: [id])
+  usuario         User    @relation(fields: [usuarioId], references: [id])
+  pokemonOfrecido Pokemon @relation("Ofrecido", fields: [userPokemonId], references: [id])
+  pokemonDeseado  Pokemon @relation("Deseado", fields: [pokemonDeseadoId], references: [id])
+}
 
-  
+model Game {
+  id          Int      @id @default(autoincrement())
+  password    String
+  player1Id   Int
+  player2Id   Int?
+  currentTurn Int      @default(1)
+  status      String   @default("waiting")
+  winner      Int?
+  createdAt   DateTime @default(now())
+
+  player1 User  @relation("Player1Games", fields: [player1Id], references: [id])
+  player2 User? @relation("Player2Games", fields: [player2Id], references: [id])
+
+  rounds Round[]
+
+}
+
+model Round {
+  id            Int      @id @default(autoincrement())
+  gameId        Int
+  roundNumber   Int
+  player1Choice Int?
+  player2Choice Int?
+  winner        String?
+  selectedStat  Int?
+  createdAt     DateTime @default(now())
+ 
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, roundNumber])
 }

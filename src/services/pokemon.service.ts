@@ -1,10 +1,13 @@
 import { prisma } from "../dataBase/database"
 import { UserService } from "./user.service";
 import PokemonDetails from "../utils/PokemonDetails"
-import PokemonDetailsBase from "../utils/PokemonDatabase"
+import PokemonDetailsBase, { PokemonDetails2 } from "../utils/PokemonDatabase"
 import ApiResponse from "../utils/ApiResponse"
 import SalidaDatabase from "../utils/SalidasDtabase"
 import Intercambio from "../utils/IntercambioGTS";
+import { Game, Round } from "@prisma/client";
+import { TurnData } from "@/sockets/GameSocketHandler";
+import { Stats } from "../utils/PokemonDatabase";
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
 const API_NEWS_KEY = process.env.API_KEY
@@ -286,7 +289,7 @@ export class PokemonService {
 
     try {
       const data = await prisma.intercambioGTS.findMany({
-        where: { estado: "abierto",  usuarioId: id },
+        where: { estado: "abierto", usuarioId: id },
         include: {
           pokemonDeseado: true,
           pokemonOfrecido: true
@@ -343,7 +346,7 @@ export class PokemonService {
       })
 
       // Primero: Elimino el pokemon de quien acepto el intercambio
-      
+
       await prisma.userPokemon.delete({
         where: {
           id: trade.pokemonDeseadoId,
@@ -353,7 +356,7 @@ export class PokemonService {
 
       // Segundo: Elimino el pokemon del usuario que propuso el intercambio 
 
-    
+
 
       const pokemonOfrecido = await prisma.pokemon.findUnique({ where: { id: trade.userPokemonId } })
       const pokemonDeseado = await prisma.pokemon.findUnique({ where: { id: trade.pokemonDeseadoId } })
@@ -363,51 +366,52 @@ export class PokemonService {
       const pokemon1 = await prisma.userPokemon.findUnique({ where: { userId: usuarioAceptaId, id: trade.userPokemonId } })
       if (!pokemon1) {
         await prisma.userPokemon.create({
-        data: {
-          id: trade.userPokemonId,
-          user:{
-            connect: {id : usuarioAceptaId}
+          data: {
+            id: trade.userPokemonId,
+            user: {
+              connect: { id: usuarioAceptaId }
+            },
+            pokemon: {
+              connect: { name: pokemonOfrecido?.name }
+            },
+            unlocked: true,
+            isTeam: false,
+            sprite: pokemonOfrecido?.sprite
           },
-          pokemon:{
-            connect: { name: pokemonOfrecido?.name}
-          },
-          unlocked: true,
-          isTeam: false,
-          sprite: pokemonOfrecido?.sprite
-        },
-        include: {
-          user: true,
-          pokemon: true
-        }
-      })
-    }
+          include: {
+            user: true,
+            pokemon: true
+          }
+        })
+      }
 
       // Guardo el pokemon si no existe
       // Pokemon para quien propuso el intercambio
 
       const pokemon2 = await prisma.userPokemon.findUnique({ where: { userId: trade.usuarioId, id: trade.pokemonDeseadoId } })
-      if (!pokemon2){ await prisma.userPokemon.create({
-        data: {
-          id: trade.pokemonDeseadoId,
-          user:{
-            connect: {id : trade.usuarioId}
-          },
-          pokemon:{
-            connect: { name: pokemonDeseado?.name}
-          },
-          unlocked: true,
-          isTeam: false,
-          sprite: pokemonDeseado?.sprite
-        }
-      })
-    }
+      if (!pokemon2) {
+        await prisma.userPokemon.create({
+          data: {
+            id: trade.pokemonDeseadoId,
+            user: {
+              connect: { id: trade.usuarioId }
+            },
+            pokemon: {
+              connect: { name: pokemonDeseado?.name }
+            },
+            unlocked: true,
+            isTeam: false,
+            sprite: pokemonDeseado?.sprite
+          }
+        })
+      }
     } catch (error) {
       console.log(error)
     }
   }
 
   static async cancelTrade(id: any) {
-    
+
     try {
       const trade = await prisma.intercambioGTS.delete({
         where: { id: id }
@@ -470,6 +474,93 @@ export class PokemonService {
       console.log(error)
     }
   }
+  static async calculateGameWinner(rounds: Round[], gameUpdated: Game): Promise<number> {
+    const score = { p1: 0, p2: 0 }
+    rounds.forEach(r => {
+      if (r.winner === 'player1') score.p1++
+      if (r.winner === 'player2') score.p2++
+    })
+    const winner =
+      score.p1 > score.p2
+        ? gameUpdated.player1Id
+        : score.p2 < score.p1 
+        ? gameUpdated.player2Id
+        : 0
+        
+    return winner!
+  }
+  static async calculateRoundWinner(turnData: TurnData) {
+    let winner
+    const round = await prisma.round.findUnique({
+      where: {
+        gameId_roundNumber: {
+          gameId: turnData.gameId,
+          roundNumber: turnData.roundNumber
+        }
+      }, include: {
+        game: true
+      }
+    })
+    const pokemon1 = await prisma.pokemon.findUnique({
+      where: {
+        id: round?.player1Choice || 0
+      }, select: {
+        id: true,
+        name: true,
+        stats: true
+      }
+    })
+    const pokemon2 = await prisma.pokemon.findUnique({
+      where: {
+        id: round?.player2Choice || 0
+
+      }
+    })
+
+    winner = this.setWinner(pokemon1 as unknown as PokemonDetails2, pokemon2 as unknown as PokemonDetails2, turnData.selectedStat)
+
+    return winner
+  }
+  static async getUserValue(estadisticas: Stats, statIndex: number) {
+    const stats = await PokemonService.getArrayFromStats(estadisticas)
+
+    return stats[statIndex]
+  }
+  static async getArrayFromStats(stats: Stats) {
+    const userStats = []
+
+    userStats[0] = stats.hp
+    userStats[1] = stats.attack
+    userStats[2] = stats.defense
+    userStats[3] = stats["special-attack"]
+    userStats[4] = stats["special-defense"]
+    userStats[5] = stats.speed
+
+    return userStats
+  }
+  static async setWinner(pokemon1: PokemonDetails2, pokemon2: PokemonDetails2, selectedStat: number) {
+    let winner
+    const stats1 = pokemon1?.stats as unknown as Stats
+    const player1Value = await this.getUserValue(stats1, selectedStat)
+    const stats2 = pokemon2?.stats as unknown as Stats
+    const player2Value = await this.getUserValue(stats2, selectedStat)
+    player1Value > player2Value
+      ? winner = "player1"
+      : player2Value > player1Value
+        ? winner = "player2"
+        : winner = this.tieBreaker(pokemon1, pokemon2)
+    return winner
+  }
+  static async tieBreaker(pokemon1: PokemonDetails2, pokemon2: PokemonDetails2) {
+    let winner
+    this.getTBS(pokemon1) > this.getTBS(pokemon2) ? winner = "player1" : winner = "player2"
+    return winner
+  }
+  static getTBS(pokemon: PokemonDetails2) {
+    const TBS = pokemon.stats.attack + pokemon.stats.defense + pokemon.stats.hp + pokemon.stats["special-attack"] + pokemon.stats["special-defense"] + pokemon.stats.speed
+    return TBS
+  }
+
 
 
   // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 
