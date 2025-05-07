@@ -17,6 +17,21 @@ interface NewsResponse {
   totalResults: number
   articles: []
 }
+interface roun{
+  id: number 
+  gameId: number
+  player1Choice?: {
+    pokeId: number
+    stat: number
+  }
+  player2Choice?: {
+    pokeId: number
+    stat: number
+  }
+  winner?: String
+  selectedStat?: number
+  createdAt: Date
+}
 
 
 let newPokemons: SalidaDatabase[] = []
@@ -44,6 +59,13 @@ export class PokemonService {
     }
     return pokemons
 
+  }
+  static async gameDetails(gameId: number){
+    const game = await prisma.game.findUnique({
+      where: {
+        id: gameId
+      }
+    })
   }
 
 
@@ -474,7 +496,7 @@ export class PokemonService {
       console.log(error)
     }
   }
-  static async calculateGameWinner(rounds: Round[], gameUpdated: Game): Promise<number> {
+  static async calculateGameWinner(rounds: Round[], gameUpdated: Game){
     const score = { p1: 0, p2: 0 }
     rounds.forEach(r => {
       if (r.winner === 'player1') score.p1++
@@ -482,12 +504,12 @@ export class PokemonService {
     })
     const winner =
       score.p1 > score.p2
-        ? gameUpdated.player1Id
+        ? ["player1", gameUpdated.player1Id]
         : score.p2 < score.p1 
-        ? gameUpdated.player2Id
-        : 0
+        ? ["player2", gameUpdated.player2Id]
+        : ["1", 0]
         
-    return winner!
+    return winner
   }
   static async calculateRoundWinner(turnData: TurnData) {
     let winner
@@ -500,10 +522,10 @@ export class PokemonService {
       }, include: {
         game: true
       }
-    })
+    }) as unknown as roun   
     const pokemon1 = await prisma.pokemon.findUnique({
       where: {
-        id: round?.player1Choice || 0
+        id: round?.player1Choice?.pokeId || 0
       }, select: {
         id: true,
         name: true,
@@ -512,7 +534,7 @@ export class PokemonService {
     })
     const pokemon2 = await prisma.pokemon.findUnique({
       where: {
-        id: round?.player2Choice || 0
+        id: round?.player2Choice?.pokeId || 0
 
       }
     })
@@ -521,12 +543,13 @@ export class PokemonService {
 
     return winner
   }
+  
   static async getUserValue(estadisticas: Stats, statIndex: number) {
-    const stats = await PokemonService.getArrayFromStats(estadisticas)
+    const stats =  PokemonService.getArrayFromStats(estadisticas)
 
     return stats[statIndex]
   }
-  static async getArrayFromStats(stats: Stats) {
+  static  getArrayFromStats(stats: Stats) {
     const userStats = []
 
     userStats[0] = stats.hp
@@ -560,13 +583,20 @@ export class PokemonService {
     const TBS = pokemon.stats.attack + pokemon.stats.defense + pokemon.stats.hp + pokemon.stats["special-attack"] + pokemon.stats["special-defense"] + pokemon.stats.speed
     return TBS
   }
+  static async IdToStat(pokemonId: number, statIndex: number){
+    const pokemon =  await prisma.pokemon.findUnique({where: {id: pokemonId}})
+    const stats =  this.getArrayFromStats(pokemon?.stats as unknown as Stats)
+    return stats[statIndex]
+  }
+
 
 
 
   // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 
   static async populatePokemonDatabase() {
+    const inicio = 498
     try {
-      for (let i = 1; i <= 1025; i++) {
+      for (let i = inicio; i <= 1025; i++) {
         const response = await fetch(`${BASE_POKEAPI}/${i}`);
         const data = await response.json() as PokemonDetailsBase
 
@@ -574,7 +604,7 @@ export class PokemonService {
         const stats = {} as Record<string, number>
         data.stats.forEach(stat => {
           stats[stat.stat.name] = stat.base_stat;
-        });
+        })
 
 
         const types = {} as Record<string, string>
@@ -609,7 +639,7 @@ export class PokemonService {
   }
   // solo se usa para limpiar registros de una tabla, esn este caso la de pokemons
   static async limpiarPokemonTable() {
-    const tope = 10
+    const tope = 87
     for (let i = 1; i <= tope; i++) {
       await prisma.pokemon.delete({
         where: { id: i }

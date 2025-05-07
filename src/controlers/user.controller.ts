@@ -16,7 +16,7 @@ export class UserController {
     static async updatelvl(req: Request, res: Response) {
         const idUser = Number(req.query.id)
         const body = req.body.level
-        console.log("llegue aqui guay")
+        
         try {
             await UserService.updatelvl(idUser, body)
             res.status(200).json({ message: "Nivel actualizado en la base de datos" })
@@ -50,5 +50,10 @@ export class UserController {
         const idUser = Number (req.query.id)
         const puntos = await UserService.getPuntos(idUser)
         res.status(200).json(puntos)
+    }
+    static async getMaxLevel(req: Request, res: Response) {
+        const idUser = Number(req.query.id)
+        const lvl = await UserService.getMaxLevel(idUser)
+        res.status(200).json(lvl)
     }
 }

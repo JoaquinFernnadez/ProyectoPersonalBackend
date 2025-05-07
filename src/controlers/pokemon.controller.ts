@@ -141,6 +141,15 @@ export class PokemonController{
           res.status(500).json({message: "No se pudo obtener el Sprite"})
         }
       }
+      static async gameDetails(req: Request,res: Response){
+        try{
+        const gameId = Number (req.query.id)
+        const game = await PokemonService.gameDetails(gameId)
+        res.status(200).json(game)
+        }catch(error){
+          res.status(500).json(error)
+        }
+      }
       
 
 

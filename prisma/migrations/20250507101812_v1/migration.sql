@@ -7,7 +7,8 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "level" INTEGER NOT NULL DEFAULT 0,
     "maxLevel" INTEGER NOT NULL DEFAULT 0,
-    "pokePuntos" INTEGER NOT NULL DEFAULT 30
+    "pokePuntos" INTEGER NOT NULL DEFAULT 30,
+    "wins" INTEGER NOT NULL DEFAULT 0
 );
 
 -- CreateTable
@@ -64,7 +65,7 @@ CREATE TABLE "Game" (
     "player2Id" INTEGER,
     "currentTurn" INTEGER NOT NULL DEFAULT 1,
     "status" TEXT NOT NULL DEFAULT 'waiting',
-    "winner" INTEGER,
+    "winner" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Game_player1Id_fkey" FOREIGN KEY ("player1Id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "Game_player2Id_fkey" FOREIGN KEY ("player2Id") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
@@ -75,10 +76,10 @@ CREATE TABLE "Round" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "gameId" INTEGER NOT NULL,
     "roundNumber" INTEGER NOT NULL,
-    "player1Choice" INTEGER,
-    "player2Choice" INTEGER,
+    "player1Choice" JSONB,
+    "player2Choice" JSONB,
     "winner" TEXT,
-    "selectedStat" TEXT,
+    "selectedStat" INTEGER,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Round_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
@@ -94,3 +95,6 @@ CREATE UNIQUE INDEX "Pokemon_name_key" ON "Pokemon"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "UserPokemon_userId_pokemonName_key" ON "UserPokemon"("userId", "pokemonName");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Round_gameId_roundNumber_key" ON "Round"("gameId", "roundNumber");

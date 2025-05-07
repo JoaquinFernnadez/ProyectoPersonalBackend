@@ -9,5 +9,6 @@ router.put('/actualizarlvl', UserController.updatelvl)
 router.get('/bestScores',UserController.getBestScores)
 router.post('/actualizarPuntos', UserController.actualizarPuntos)
 router.get('/getPuntos', UserController.getPuntos)
+router.get('/maxLevel', UserController.getMaxLevel)
 
 export default router

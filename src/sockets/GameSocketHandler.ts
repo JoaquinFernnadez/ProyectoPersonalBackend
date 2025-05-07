@@ -1,14 +1,14 @@
 import { Server, Socket } from 'socket.io'
-import { PrismaClient, Round } from '@prisma/client'
-import { PokemonService } from '@/services/pokemon.service'
+import { Prisma, PrismaClient } from '@prisma/client'
+import { PokemonService } from '../services/pokemon.service'
 
 export interface TurnData {
   gameId: number
   playerId: number
-  turn: number
-  choice: number
+  turn: number  // 1 : 2
+  choice: number // id del pokemon 
   roundNumber: number
-  selectedStat: number
+  selectedStat: number // id de la stat 
 }
 
 const TOTAL_ROUNDS = 3;
@@ -28,22 +28,22 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
           {
             gameId: game.id,
             roundNumber: 1,
-            player1Choice: null,
-            player2Choice: null,
+            player1Choice: {pokeId: 0, stat: 0},
+            player2Choice: {pokeId: 0, stat: 0},
             winner: null,
           },
           {
             gameId: game.id,
             roundNumber: 2,
-            player1Choice: null,
-            player2Choice: null,
+            player1Choice: {pokeId: 0, stat: 0},
+            player2Choice: {pokeId: 0, stat: 0},
             winner: null,
           },
           {
             gameId: game.id,
             roundNumber: 3,
-            player1Choice: null,
-            player2Choice: null,
+            player1Choice: {pokeId: 0, stat: 0},
+            player2Choice: {pokeId: 0, stat: 0},
             winner: null,
           }
         ]
@@ -72,6 +72,14 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
         }
       })
       socket.join(gameId.toString())
+      io.to(gameId.toString()).emit("join-game",{
+        ready: true,
+        gameId: game.id,
+        players: {
+          player1Id: game.player1Id,
+          player2Id: game.player2Id
+        }
+      })
       console.log(`Jugador ${socket.id} se unió al juego ${gameId}`)
     } catch (error) {
       console.error('Error al unir jugador:', error)
@@ -92,8 +100,9 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
           rounds: true
         }
       })
-      const dataToUpdate: Partial<Round> = {
-        ...(turnData.turn === 1 ? { player1Choice: turnData.choice } : { player2Choice: turnData.choice }),
+      const dataToUpdate: Prisma.RoundUpdateInput = {
+        ...(turnData.turn === 1 ? { player1Choice: {pokeId: turnData.choice, stat: await  PokemonService.IdToStat(turnData.choice, turnData.selectedStat)} }
+                                : { player2Choice: {pokeId: turnData.choice, stat: await  PokemonService.IdToStat(turnData.choice, turnData.selectedStat)} }),
         selectedStat: turnData.selectedStat,
       }
       if (turnData.turn === 2) dataToUpdate.winner = await PokemonService.calculateRoundWinner(turnData)
@@ -113,21 +122,21 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
       io.to(turnData.gameId.toString()).emit('game-update', {
         message: `Jugador ${turnData.turn} ha seleccionado`,
         gameUpdated,
-        round
+        round 
       })
       if (turnData.roundNumber === 2 && turnData.turn === 2) {
         const winner = await PokemonService.calculateGameWinner(gameUpdated.rounds, gameUpdated)
-        if (winner === 1 || winner === 2) {
+        if (winner[0] === "player1" || winner[0] === "player2") {
           const finishedGame = await prisma.game.update({
             where: { id: turnData.gameId },
             data: {
               status: 'finished',
-              winner
+              winner: winner[0] 
             }
           })
           await prisma.user.update({
             where: {
-              id: winner
+              id: winner[1] as number
             },data: {
               wins: {
                 increment: 1
@@ -143,12 +152,12 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
         }
       }
       if (turnData.roundNumber === TOTAL_ROUNDS) {
-        // Lógica para decidir el ganador, si la tienes (ejemplo simple):
+        
         const winner = await PokemonService.calculateGameWinner(gameUpdated.rounds, gameUpdated)
 
           await prisma.user.update({
             where: {
-              id: winner
+              id: winner[1] as number
             },data: {
               wins: {
                 increment: 1
@@ -160,7 +169,7 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
           where: { id: turnData.gameId },
           data: {
             status: 'finished',
-            winner
+            winner: winner[0] as string
           }
         })
 
@@ -175,13 +184,22 @@ export default function gameSocketHandler(socket: Socket, prisma: PrismaClient, 
   })
   socket.on('leave-game', async (gameId: number, userId: number) => {
     try {
+      const game = await prisma.game.findUnique({where: {id: gameId}})
+      await prisma.game.update({
+        where: {
+          id: gameId
+        },
+        data: {
+          winner: (game?.player1Id == userId) ? "player2" : "player1"
+        }
+      })
       socket.leave(gameId.toString())
       console.log(`Jugador ${socket.id} ha salido de la sala ${gameId}`)
       
       const socketsInRoom = await io.in(gameId.toString()).fetchSockets()
 
       if (socketsInRoom.length === 0) {
-        console.log(`Cerrando sala ${gameId} por inactividad`)
+        console.log(`Cerrando sala ${gameId} `)
         
       }
 

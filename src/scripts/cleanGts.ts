@@ -1,11 +1,12 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client'
+
 const prisma = new PrismaClient();
 
 (async () => {
   try {
     const intercambios = await prisma.intercambioGTS.findMany({
       where: { estado: 'intercambiado' } 
-    });
+    })
     console.log(` Encontrados: ${intercambios.length} intercambios con estado "intercambiado"`)
 
     const deleted = await prisma.intercambioGTS.deleteMany({

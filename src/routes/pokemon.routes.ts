@@ -21,5 +21,6 @@ router.post('/gts/aceptar', PokemonController.acceptTrade)
 router.get('/gts/cancelar', PokemonController.cancelTrade)
 router.get('/listPokeNames', PokemonController.listPokeNames)
 
+router.get('/gameDetails', PokemonController.gameDetails)
 
 export default router

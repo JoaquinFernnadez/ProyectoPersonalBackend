@@ -29,6 +29,10 @@ export class UserService {
         const user = await this.getById(idUser)
         return user.level
     }
+    static async getMaxLevel(idUser: number) {
+        const user = await this.getById(idUser)
+        return user.maxLevel
+    }
     static async updatelvl(idUser: number, level: number) {
         console.log(level)
         await prisma.user.update({
