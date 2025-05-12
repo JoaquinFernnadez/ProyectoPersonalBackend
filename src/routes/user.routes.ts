@@ -11,4 +11,6 @@ router.post('/actualizarPuntos', UserController.actualizarPuntos)
 router.get('/getPuntos', UserController.getPuntos)
 router.get('/maxLevel', UserController.getMaxLevel)
 
+router.get('/getWins', UserController.getWins)
+
 export default router

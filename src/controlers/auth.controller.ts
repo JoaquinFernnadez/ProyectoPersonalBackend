@@ -26,8 +26,8 @@ export class AuthController{
             res.cookie('token',token,{
                 maxAge: 60 * 60 * 1000, // 1 hora de duracion
                 httpOnly: true, // no se puede acceder mediate js
-                secure: true,  // solo se envia por https
-                sameSite: 'lax', // Evita ataque CSRF lax o strict
+                secure: true,  // solo se envia por https 
+                sameSite: 'none', // Evita ataque CSRF lax o strict 
             })
             res.status(201).json({message:'Login succesfully',token})
             
@@ -40,15 +40,17 @@ export class AuthController{
 
     static async getAuthenticatedUser (req: Request, res: Response, next: NextFunction){
         try {
-            const token = req.cookies.token
-            console.log(token)
+            const token = req.cookies.token 
+
+        
+            console.log(token, "Estoy entrando aqui")
             if (!token)  res.status(401).json({ message: "No autenticado" })
             const decoded = jwt.verify(token, TOKEN_PASSWORD)
             res.status(200).json(decoded)
         } catch (error) {
             next(error)
         }
-    }
+    }                                                                                         
     static async logout(req: Request, res: Response, next: NextFunction) {
         try {
             res.clearCookie('token')

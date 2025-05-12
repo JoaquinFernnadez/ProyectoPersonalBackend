@@ -508,6 +508,8 @@ export class PokemonService {
         : score.p2 < score.p1 
         ? ["player2", gameUpdated.player2Id]
         : ["1", 0]
+
+      
         
     return winner
   }
@@ -588,8 +590,6 @@ export class PokemonService {
     const stats =  this.getArrayFromStats(pokemon?.stats as unknown as Stats)
     return stats[statIndex]
   }
-
-
 
 
   // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 

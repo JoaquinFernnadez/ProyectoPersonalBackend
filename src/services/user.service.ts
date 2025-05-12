@@ -91,4 +91,8 @@ export class UserService {
         const user = await this.getById(idUser)
         return user.pokePuntos
     }
+    static async getWins(idUser: number){
+        const user = await this.getById(idUser)
+        return user.wins
+    }
 }

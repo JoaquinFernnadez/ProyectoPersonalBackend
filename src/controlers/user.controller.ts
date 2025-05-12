@@ -56,4 +56,9 @@ export class UserController {
         const lvl = await UserService.getMaxLevel(idUser)
         res.status(200).json(lvl)
     }
+    static async getWins(req: Request, res: Response) {
+        const idUser = Number(req.query.id)
+        const wins = await UserService.getWins(idUser)
+        res.status(200).json(wins)
+    }
 }
