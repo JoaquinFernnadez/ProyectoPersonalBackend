@@ -2,7 +2,7 @@ import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 import HttpException from "../exceptions/HttpException2"
-import { prisma } from "dataBase/database"
+import  prisma  from "dataBase/database"
 
 
 const Token_password = process.env.TOKEN_PASSWORD || 'pass'

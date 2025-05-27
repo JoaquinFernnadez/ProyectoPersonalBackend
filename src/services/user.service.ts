@@ -1,5 +1,5 @@
 import HttpException from "../exceptions/HttpException2";
-import { prisma } from "../dataBase/database";
+import  prisma  from "../dataBase/database";
 
 export class UserService {
 
@@ -63,7 +63,7 @@ export class UserService {
             orderBy: {
                 maxLevel : "desc"
             },
-            take : 100,
+            take : 50,
             omit :{
                 password: true,
                 role: true,

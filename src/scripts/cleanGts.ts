@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from "../dataBase/database"
 
-const prisma = new PrismaClient();
+
 
 (async () => {
   try {

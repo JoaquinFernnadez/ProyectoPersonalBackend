@@ -1,4 +1,4 @@
-import { prisma } from "../dataBase/database"
+import  prisma  from "../dataBase/database"
 import { UserService } from "./user.service";
 import PokemonDetails from "../utils/PokemonDetails"
 import PokemonDetailsBase, { PokemonDetails2 } from "../utils/PokemonDatabase"
@@ -6,7 +6,7 @@ import ApiResponse from "../utils/ApiResponse"
 import SalidaDatabase from "../utils/SalidasDtabase"
 import Intercambio from "../utils/IntercambioGTS";
 import { Game, Round } from "@prisma/client";
-import { TurnData } from "@/sockets/GameSocketHandler";
+import { TurnData } from "../server"
 import { Stats } from "../utils/PokemonDatabase";
 
 const BASE_POKEAPI = 'https://pokeapi.co/api/v2/pokemon';
@@ -17,8 +17,8 @@ interface NewsResponse {
   totalResults: number
   articles: []
 }
-interface roun{
-  id: number 
+interface roun {
+  id: number
   gameId: number
   player1Choice?: {
     pokeId: number
@@ -60,14 +60,26 @@ export class PokemonService {
     return pokemons
 
   }
-  static async gameDetails(gameId: number){
+  static async gameDetails(gameId: number) {
     const game = await prisma.game.findUnique({
       where: {
         id: gameId
       }
     })
   }
-
+  
+  static async getGames(){
+    let gamesId = []
+    const games = await prisma.game.findMany({
+      where:{
+        player2Id: null  
+      }
+    })
+    for(let i = 0;i < games.length;i++){
+      gamesId[i] = games[i].id
+    }
+    return gamesId
+  }
 
   static async getNewPokemons() {
     newPokemons = []
@@ -115,6 +127,18 @@ export class PokemonService {
     } catch (error) {
       throw Error('Error al obtener los Pokémon desbloqueados.');
     }
+  }
+  static async obtenerNombrePokemonsDesbloqueados(userId: number) {
+    const PokemonNames = []
+    const pokemon = await prisma.userPokemon.findMany({
+      where: {
+        userId
+      },
+    })
+    for (let i = 0; i < pokemon.length; i++) {
+      PokemonNames[i] = pokemon[i].pokemonName
+    }
+    return PokemonNames
   }
 
   static async guardarEquipoUsuario(userId: number, pokemonIds: number[]) {
@@ -300,7 +324,7 @@ export class PokemonService {
           pokemonOfrecido: true
         }
       })
-      const filtrado = data.filter(item => item.usuarioId !== id);
+      const filtrado = data.filter((item: { usuarioId: number }) => item.usuarioId !== id);
 
       return filtrado
     } catch (error) {
@@ -496,7 +520,7 @@ export class PokemonService {
       console.log(error)
     }
   }
-  static async calculateGameWinner(rounds: Round[], gameUpdated: Game){
+  static async calculateGameWinner(rounds: Round[], gameUpdated: Game) {
     const score = { p1: 0, p2: 0 }
     rounds.forEach(r => {
       if (r.winner === 'player1') score.p1++
@@ -505,12 +529,12 @@ export class PokemonService {
     const winner =
       score.p1 > score.p2
         ? ["player1", gameUpdated.player1Id]
-        : score.p2 < score.p1 
-        ? ["player2", gameUpdated.player2Id]
-        : ["1", 0]
+        : score.p2 < score.p1
+          ? ["player2", gameUpdated.player2Id]
+          : ["1", 0]
 
-      
-        
+
+
     return winner
   }
   static async calculateRoundWinner(turnData: TurnData) {
@@ -524,7 +548,7 @@ export class PokemonService {
       }, include: {
         game: true
       }
-    }) as unknown as roun   
+    }) as unknown as roun
     const pokemon1 = await prisma.pokemon.findUnique({
       where: {
         id: round?.player1Choice?.pokeId || 0
@@ -545,13 +569,13 @@ export class PokemonService {
 
     return winner
   }
-  
+
   static async getUserValue(estadisticas: Stats, statIndex: number) {
-    const stats =  PokemonService.getArrayFromStats(estadisticas)
+    const stats = PokemonService.getArrayFromStats(estadisticas)
 
     return stats[statIndex]
   }
-  static  getArrayFromStats(stats: Stats) {
+  static getArrayFromStats(stats: Stats) {
     const userStats = []
 
     userStats[0] = stats.hp
@@ -585,18 +609,23 @@ export class PokemonService {
     const TBS = pokemon.stats.attack + pokemon.stats.defense + pokemon.stats.hp + pokemon.stats["special-attack"] + pokemon.stats["special-defense"] + pokemon.stats.speed
     return TBS
   }
-  static async IdToStat(pokemonId: number, statIndex: number){
-    const pokemon =  await prisma.pokemon.findUnique({where: {id: pokemonId}})
-    const stats =  this.getArrayFromStats(pokemon?.stats as unknown as Stats)
+  static async IdToStat(pokemonId: number, statIndex: number) {
+    const pokemon = await prisma.pokemon.findUnique({ where: { id: pokemonId } })
+    const stats = this.getArrayFromStats(pokemon?.stats as unknown as Stats)
     return stats[statIndex]
+  }
+  static async getPlayer1Id(gameId: number){
+    const game = await prisma.game.findUnique({where: {id: gameId}})
+    return game?.player1Id
   }
 
 
   // Solo se usa para poblar la base de datos pero no tiene utilidad en la web 
   static async populatePokemonDatabase() {
-    const inicio = 498
+    const inicio = 1
+    const final = 5
     try {
-      for (let i = inicio; i <= 1025; i++) {
+      for (let i = inicio; i <= final; i++) {
         const response = await fetch(`${BASE_POKEAPI}/${i}`);
         const data = await response.json() as PokemonDetailsBase
 
@@ -639,12 +668,13 @@ export class PokemonService {
   }
   // solo se usa para limpiar registros de una tabla, esn este caso la de pokemons
   static async limpiarPokemonTable() {
-    const tope = 87
-    for (let i = 1; i <= tope; i++) {
+    const tope = 1025
+    for (let i = 6; i <= tope; i++) {
       await prisma.pokemon.delete({
         where: { id: i }
       })
     }
+    return
   }
 
 }

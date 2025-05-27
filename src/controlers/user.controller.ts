@@ -43,7 +43,7 @@ export class UserController {
             await UserService.actualizarPuntos(userId,body)
             res.status(200).json({message: "Se actualizaron los puntos del Usuario"})
         }catch(error){
-            res.status(500).json(error)
+            res.status(500).json(error instanceof Error ? error.message : "Fallo")
         }
     }
     static async getPuntos(req: Request, res: Response){

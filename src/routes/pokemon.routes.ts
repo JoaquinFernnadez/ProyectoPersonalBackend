@@ -20,7 +20,10 @@ router.post('/gts/crear', PokemonController.newTrade)
 router.post('/gts/aceptar', PokemonController.acceptTrade)
 router.get('/gts/cancelar', PokemonController.cancelTrade)
 router.get('/listPokeNames', PokemonController.listPokeNames)
+router.get('/listMyNames', PokemonController.obtenerNombrePokemonsDesbloqueados)
+router.get('/games', PokemonController.getGames)
 
 router.get('/gameDetails', PokemonController.gameDetails)
+router.get('/player1Id', PokemonController.getPlayer1Id)
 
 export default router
