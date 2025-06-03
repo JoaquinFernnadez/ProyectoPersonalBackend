@@ -1,4 +1,4 @@
-import  prisma  from "../dataBase/database"
+import prisma from "../dataBase/database"
 import { UserService } from "./user.service";
 import PokemonDetails from "../utils/PokemonDetails"
 import PokemonDetailsBase, { PokemonDetails2 } from "../utils/PokemonDatabase"
@@ -67,15 +67,15 @@ export class PokemonService {
       }
     })
   }
-  
-  static async getGames(){
+
+  static async getGames() {
     let gamesId = []
     const games = await prisma.game.findMany({
-      where:{
-        player2Id: null  
+      where: {
+        player2Id: null
       }
     })
-    for(let i = 0;i < games.length;i++){
+    for (let i = 0; i < games.length; i++) {
       gamesId[i] = games[i].id
     }
     return gamesId
@@ -538,6 +538,7 @@ export class PokemonService {
     return winner
   }
   static async calculateRoundWinner(turnData: TurnData) {
+    console.log("ATIENDE AQUI", turnData.playerId)
     let winner
     const round = await prisma.round.findUnique({
       where: {
@@ -560,10 +561,15 @@ export class PokemonService {
     })
     const pokemon2 = await prisma.pokemon.findUnique({
       where: {
-        id: round?.player2Choice?.pokeId || 0
-
+        id: turnData.choice
+      }, select: {
+        id: true,
+        name: true,
+        stats: true
       }
     })
+    console.log('POKEMON1 setWinner', pokemon1)
+    console.log('POKEMON2 setWInner', pokemon2)
 
     winner = this.setWinner(pokemon1 as unknown as PokemonDetails2, pokemon2 as unknown as PokemonDetails2, turnData.selectedStat)
 
@@ -576,6 +582,8 @@ export class PokemonService {
     return stats[statIndex]
   }
   static getArrayFromStats(stats: Stats) {
+    console.log('Stats', stats)
+
     const userStats = []
 
     userStats[0] = stats.hp
@@ -588,7 +596,8 @@ export class PokemonService {
     return userStats
   }
   static async setWinner(pokemon1: PokemonDetails2, pokemon2: PokemonDetails2, selectedStat: number) {
-    let winner
+
+    let winner = ""
     const stats1 = pokemon1?.stats as unknown as Stats
     const player1Value = await this.getUserValue(stats1, selectedStat)
     const stats2 = pokemon2?.stats as unknown as Stats
@@ -597,7 +606,7 @@ export class PokemonService {
       ? winner = "player1"
       : player2Value > player1Value
         ? winner = "player2"
-        : winner = this.tieBreaker(pokemon1, pokemon2)
+        : winner = await this.tieBreaker(pokemon1, pokemon2)
     return winner
   }
   static async tieBreaker(pokemon1: PokemonDetails2, pokemon2: PokemonDetails2) {
@@ -614,8 +623,8 @@ export class PokemonService {
     const stats = this.getArrayFromStats(pokemon?.stats as unknown as Stats)
     return stats[statIndex]
   }
-  static async getPlayer1Id(gameId: number){
-    const game = await prisma.game.findUnique({where: {id: gameId}})
+  static async getPlayer1Id(gameId: number) {
+    const game = await prisma.game.findUnique({ where: { id: gameId } })
     return game?.player1Id
   }
 

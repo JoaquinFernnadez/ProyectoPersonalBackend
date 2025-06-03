@@ -109,7 +109,7 @@ io.on('connect', (socket) => {
                 }
             })
             socket.join(gameId.toString())
-            io.to(gameId.toString()).emit("join-game",{
+            io.to(gameId.toString()).emit("join-game", {
                 ready: true,
                 gameId: game.id,
                 players: {
@@ -123,7 +123,9 @@ io.on('connect', (socket) => {
             socket.emit('error', 'No se pudo unir al juego')
         }
     })
-    socket.on('game-updated', async (turnData: TurnData) => {
+    socket.on('game-update', async (turnData: TurnData) => {
+        console.log('turnData : ' , turnData)
+
         try {
             // Actualizar la base de datos con la elección del jugador
             const gameUpdated = await prisma.game.update({
@@ -138,9 +140,20 @@ io.on('connect', (socket) => {
                 }
             })
             const dataToUpdate: Prisma.RoundUpdateInput = {
-                ...(turnData.turn === 1 ? { player1Choice: { pokeId: turnData.choice, stat: await PokemonService.IdToStat(turnData.choice, turnData.selectedStat) } }
-                    : { player2Choice: { pokeId: turnData.choice, stat: await PokemonService.IdToStat(turnData.choice, turnData.selectedStat) } }),
-                selectedStat: turnData.selectedStat,
+                ...(turnData.turn === 1
+                    ? {
+                        player1Choice: {
+                            pokeId: turnData.choice,
+                            stat: await PokemonService.IdToStat(turnData.choice, turnData.selectedStat)
+                        },
+                        selectedStat: turnData.selectedStat
+                    }
+                    : {
+                        player2Choice: {
+                            pokeId: turnData.choice,
+                            stat: await PokemonService.IdToStat(turnData.choice, turnData.selectedStat)
+                        }
+                    })
             }
             if (turnData.turn === 2) dataToUpdate.winner = await PokemonService.calculateRoundWinner(turnData)
 
@@ -156,7 +169,8 @@ io.on('connect', (socket) => {
             })
 
             // Emitir evento de actualización del juego a ambos jugadores
-            io.to(turnData.gameId.toString()).emit('game-update', {
+            console.log("Recibido el turno y enviandolo")
+            io.emit('game-update', {
                 message: `Jugador ${turnData.turn} ha seleccionado`,
                 gameUpdated,
                 round
@@ -191,7 +205,7 @@ io.on('connect', (socket) => {
             if (turnData.roundNumber === TOTAL_ROUNDS) {
 
                 const winner = await PokemonService.calculateGameWinner(gameUpdated.rounds, gameUpdated)
-
+                console.log("WINNER HERE PLEASE LOOK ", winner)
                 await prisma.user.update({
                     where: {
                         id: winner[1] as number
@@ -217,6 +231,7 @@ io.on('connect', (socket) => {
             }
         } catch (error) {
             socket.emit('error', error)
+            console.log('ERROR :', error)
         }
     })
     socket.on('leave-game', async (gameId: number, userId: number) => {
@@ -250,6 +265,14 @@ io.on('connect', (socket) => {
             console.error('Error al salir del juego:', error)
             socket.emit('game-error', 'No se pudo salir correctamente')
         }
+    })
+    socket.on('stat-selected', (stat: string, index: number) => {
+        console.log(stat, index)
+        
+        io.emit('stat-selected',
+            stat,
+            index
+        )
     })
 })
 
