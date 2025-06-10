@@ -5,20 +5,7 @@ import { Quejas } from "@prisma/client";
 
 export class ComplaintsService {
 
-    static async getAll(idUser : number){
-        const rol = await prisma.user.findUnique({
-            where:{
-                id: idUser,
-                role: 'Admin'
-            }})
-        if(!rol) {
-                    const userComplaints = await prisma.quejas.findMany({
-                     where: {
-                        userId: idUser
-                    }
-                })
-            return userComplaints
-         }
+    static async getAll(){
         const complaints =  await prisma.quejas.findMany()
         return complaints
     }

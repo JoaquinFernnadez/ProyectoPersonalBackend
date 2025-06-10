@@ -4,8 +4,8 @@ import {ComplaintsService}  from "../services/complaints.service";
 export class ComplaintsController{
 
     static async getAll(req:Request, res:Response){
-        const idUser = Number (req.query.id)
-        const complaint = await ComplaintsService.getAll(idUser)
+    
+        const complaint = await ComplaintsService.getAll()
         res.status(200).json(complaint) 
     }
     static async createNew(req:Request, res:Response,next: NextFunction){

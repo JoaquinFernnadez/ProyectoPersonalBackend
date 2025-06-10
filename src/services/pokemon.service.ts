@@ -163,7 +163,7 @@ export class PokemonService {
           isTeam: false
 
         }
-      });
+      })
     }
 
     try {
@@ -175,15 +175,15 @@ export class PokemonService {
           }, data: {
             isTeam: true
           }
-        });
+        })
         if (!pokemon) {
-          throw new Error(`El Pokémon no existe.`);
+          throw new Error(`El Pokémon no existe.`)
         }
       }
 
-      return 'Equipo guardado correctamente';
+      return 'Equipo guardado correctamente'
     } catch (error) {
-      throw new Error('Error al guardar el equipo.');
+      throw new Error('Error al guardar el equipo.')
     }
   }
 
@@ -400,8 +400,6 @@ export class PokemonService {
         },
       })
 
-      // Segundo: Elimino el pokemon del usuario que propuso el intercambio 
-
 
 
       const pokemonOfrecido = await prisma.pokemon.findUnique({ where: { id: trade.userPokemonId } })
@@ -527,11 +525,10 @@ export class PokemonService {
       if (r.winner === 'player2') score.p2++
     })
     const winner =
-      score.p1 > score.p2
+      score.p1 >= score.p2
         ? ["player1", gameUpdated.player1Id]
-        : score.p2 < score.p1
-          ? ["player2", gameUpdated.player2Id]
-          : ["1", 0]
+        : ["player2", gameUpdated.player2Id]
+         
 
 
 

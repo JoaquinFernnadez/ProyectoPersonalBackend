@@ -202,7 +202,7 @@ io.on('connect', (socket) => {
                     return
                 }
             }
-            if (turnData.roundNumber === TOTAL_ROUNDS) {
+            if (turnData.roundNumber === TOTAL_ROUNDS && turnData.playerId === gameUpdated.player2Id) {
 
                 const winner = await PokemonService.calculateGameWinner(gameUpdated.rounds, gameUpdated)
                 console.log("WINNER HERE PLEASE LOOK ", winner)
