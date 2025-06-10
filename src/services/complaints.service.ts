@@ -20,4 +20,8 @@ export class ComplaintsService {
             throw new HttpException(401,"Error al crear la queja")
         }
     } 
+    static async delete(id: number){
+        const complaint = await prisma.quejas.delete({where: {id}})
+        return complaint
+    }
 }

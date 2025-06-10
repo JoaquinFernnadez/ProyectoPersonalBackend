@@ -6,6 +6,7 @@ const router = Router()
 
 router.get('/list', isAuthenticate, ComplaintsController.getAll )
 router.post('/create', ComplaintsController.createNew )
+router.post('/delete', ComplaintsController.delete)
 
 export default router
 

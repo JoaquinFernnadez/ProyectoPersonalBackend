@@ -21,4 +21,14 @@ export class ComplaintsController{
         }
 
     }
+    static async delete(req: Request, res: Response){
+        try{
+            console.log(req.body)
+            const id = req.body
+            const complainDeleted = await ComplaintsService.delete(id)
+            res.status(200).json()
+        }catch(error){
+            res.status(500).json(error)
+        }
+    }
 }
